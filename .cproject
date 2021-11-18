@@ -96,7 +96,7 @@
 						</tool>
 					</fileInfo>
 					<sourceEntries>
-						<entry excluding="DSP2833x_EQep.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="DSP2833x_Xintf.c|DSP2833x_usDelay.asm|DSP2833x_SysCtrl.c|DSP2833x_Spi.c|DSP2833x_Sci.c|DSP2833x_PieVect.c|DSP2833x_PieCtrl.c|DSP2833x_MemCopy.c|DSP2833x_Mcbsp.c|DSP2833x_I2C.c|DSP2833x_Headers_nonBIOS.cmd|DSP2833x_Gpio.c|DSP2833x_GlobalVariableDefs.c|DSP2833x_EPwm.c|DSP2833x_ECap.c|DSP2833x_ECan.c|DSP2833x_DMA.c|DSP2833x_DisInt.asm|DSP2833x_DefaultIsr.c|DSP2833x_DBGIER.asm|DSP2833x_CSMPasswords.asm|DSP2833x_CpuTimers.c|DSP2833x_CodeStartBranch.asm|DSP2833x_Adc.c|DSP2833x_ADC_cal.asm|DSP2833x_EQep.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
