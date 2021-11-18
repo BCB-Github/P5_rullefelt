@@ -41,8 +41,11 @@
 								<option id="com.ti.ccstudio.buildDefinitions.C2000_21.6.compilerID.DIAG_WRAP.808200382" name="Wrap diagnostic messages (--diag_wrap)" superClass="com.ti.ccstudio.buildDefinitions.C2000_21.6.compilerID.DIAG_WRAP" useByScannerDiscovery="false" value="com.ti.ccstudio.buildDefinitions.C2000_21.6.compilerID.DIAG_WRAP.off" valueType="enumerated"/>
 								<option id="com.ti.ccstudio.buildDefinitions.C2000_21.6.compilerID.INCLUDE_PATH.1612170320" name="Add dir to #include search path (--include_path, -I)" superClass="com.ti.ccstudio.buildDefinitions.C2000_21.6.compilerID.INCLUDE_PATH" valueType="includePath">
 									<listOptionValue builtIn="false" value="D:\Program Files (x86)\TI\C2000Ware_4_00_00_00\device_support\f2833x\common\include"/>
+									<listOptionValue builtIn="false" value="C:\ti\C2000Ware_3_04_00_00_Software\device_support\f2833x\headers\include"/>
+									<listOptionValue builtIn="false" value="C:\ti\C2000Ware_3_04_00_00_Software\device_support\f2833x\common\include"/>
 									<listOptionValue builtIn="false" value="D:\Program Files (x86)\TI\C2000Ware_4_00_00_00\libraries\math\FPUfastRTS\c28\include"/>
 									<listOptionValue builtIn="false" value="D:\Program Files (x86)\TI\C2000Ware_4_00_00_00\libraries\math\IQmath\c28\include"/>
+									<listOptionValue builtIn="false" value="C:\ti\C2000Ware_3_04_00_00_Software\libraries\math\IQmath\c28\include"/>
 									<listOptionValue builtIn="false" value="D:\Program Files (x86)\TI\C2000Ware_4_00_00_00\device_support\f2833x\headers\include"/>
 									<listOptionValue builtIn="false" value="${PROJECT_ROOT}"/>
 									<listOptionValue builtIn="false" value="${workspace_loc:/${ProjName}}"/>
@@ -63,6 +66,8 @@
 								<option id="com.ti.ccstudio.buildDefinitions.C2000_21.6.linkerID.DIAG_WRAP.96017508" name="Wrap diagnostic messages (--diag_wrap)" superClass="com.ti.ccstudio.buildDefinitions.C2000_21.6.linkerID.DIAG_WRAP" useByScannerDiscovery="false" value="com.ti.ccstudio.buildDefinitions.C2000_21.6.linkerID.DIAG_WRAP.off" valueType="enumerated"/>
 								<option id="com.ti.ccstudio.buildDefinitions.C2000_21.6.linkerID.SEARCH_PATH.1158871705" name="Add &lt;dir&gt; to library search path (--search_path, -i)" superClass="com.ti.ccstudio.buildDefinitions.C2000_21.6.linkerID.SEARCH_PATH" valueType="libPaths">
 									<listOptionValue builtIn="false" value="${CG_TOOL_ROOT}/lib"/>
+									<listOptionValue builtIn="false" value="C:\ti\C2000Ware_3_04_00_00_Software\libraries\math\FPUfastRTS\c28\lib"/>
+									<listOptionValue builtIn="false" value="C:\ti\C2000Ware_3_04_00_00_Software\libraries\math\IQmath\c28\lib"/>
 									<listOptionValue builtIn="false" value="D:\Program Files (x86)\TI\C2000Ware_4_00_00_00\libraries\math\IQmath\c28\lib"/>
 									<listOptionValue builtIn="false" value="D:\Program Files (x86)\TI\C2000Ware_4_00_00_00\libraries\math\FPUfastRTS\c28\lib"/>
 									<listOptionValue builtIn="false" value="${CG_TOOL_ROOT}/include"/>
