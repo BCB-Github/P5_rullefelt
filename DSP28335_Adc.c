@@ -51,7 +51,7 @@
 //
 // Defines
 //
-#define ADC_usDELAY  5000L
+#define ADC_usDELAY  5000L //
 
 //
 // InitAdc - This function initializes ADC to a known state.
@@ -90,7 +90,7 @@ InitAdc(void)
     // contain the correct CPU clock period in nanoseconds.
     //
     AdcRegs.ADCTRL3.all = 0x00E0;  // Power up bandgap/reference/ADC circuits
-    DELAY_US(ADC_usDELAY);         // Delay before converting ADC channels
+    DELAY_US(ADC_usDELAY);         // Dselay before converting ADC channel
 }
 
 //

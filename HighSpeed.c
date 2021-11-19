@@ -22,8 +22,60 @@ float V_DC, V_REF, duty_gain;
 
 
 
+///////////////////////
+//DEBUGGING CONSTANTS
+int adc_timer_1 = 0;
+int adc_timer_2 = 0;
+int adc_difference = 0;
+
+int pwm_timer_1 = 0;
+int pwm_timer_2 = 0;
+int pwm_difference = 0;
+int pwm_count = 0;
+
+long pwm_integer_counter = 0;
+long adc_integer_counter = 0;
+
+// now some constants to see the time difference between when we read the adc values and when we switch
+
+long adc_time_stamp = 0;
+long adc_time_stamp_counter = 0;
+long pwm_time_stamp = 0;
+long adc_pwm_time_difference = 0;
+////////////
+
+
+
 
  void pwm_update(DATA_PIPELINE *data_pipeline, CONTROL *inverter_duty_control){
+
+
+     /// DEBUGGING
+     pwm_time_stamp = CpuTimer2Regs.TIM.all;
+
+     pwm_integer_counter++;
+
+     pwm_count++;
+     if (pwm_count > 1){
+         pwm_count = 0;
+     }
+     /// speed testing
+     if (pwm_count == 0){
+             pwm_timer_1 = CpuTimer2Regs.TIM.all;
+
+     }
+     else if (pwm_count == 1){
+
+         pwm_timer_2 = CpuTimer2Regs.TIM.all;
+         pwm_difference = pwm_timer_2 - pwm_timer_1;
+
+     }
+
+     /////////
+
+
+
+
 
 
     // this is where duty cycle for the inverter h bridge will be updated
@@ -40,10 +92,38 @@ float V_DC, V_REF, duty_gain;
 
 extern void data_sampling(DATA_PIPELINE *data_pipeline){
 
+    adc_time_stamp_counter++;
+    if (adc_time_stamp_counter == 2){
+        adc_time_stamp = CpuTimer2Regs.TIM.all;
+        adc_pwm_time_difference = - pwm_time_stamp + adc_time_stamp;
 
-    data_pipeline->I_inverter[ConversionCount] = AdcRegs.ADCRESULT0>>4;
-    data_pipeline->V_DC[ConversionCount] = AdcRegs.ADCRESULT1>>4;
+    }else if (adc_time_stamp_counter == 4) {
+        adc_time_stamp_counter = 0;
+    }
 
+
+
+
+    //// DEBUGGING
+    adc_integer_counter++;
+
+    /// speed testing
+    if (ConversionCount == 1){
+            adc_timer_1 = CpuTimer2Regs.TIM.all;
+
+    }
+    else if (ConversionCount == 2){
+
+        adc_timer_2 = CpuTimer2Regs.TIM.all;
+        adc_difference = adc_timer_2 - adc_timer_1;
+
+    }
+    ////////
+
+
+
+            data_pipeline->I_inverter[ConversionCount] = AdcRegs.ADCRESULT0>>4;
+            data_pipeline->V_DC[ConversionCount] = AdcRegs.ADCRESULT1>>4;
 
 
             float runnning_sum_voltage = 0;
@@ -61,7 +141,7 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline){
                 if (data_pipeline->V_DC[i] <= 4095){
                 runnning_sum_voltage +=data_pipeline->V_DC[i];
                 }else
-                    runnning_sum_voltage += 4095;
+                    runnning_sum_voltage += 4095; /// look at this
             }
 
             data_pipeline->V_DC_AVRG= 18.6*(((runnning_sum_voltage/10))*3/4096); //Conversion from the digial value, to the measured value, to the average dc value
@@ -89,7 +169,7 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline){
                 if (data_pipeline->I_inverter[i] <= 4095){
                 runnning_sum_current +=data_pipeline->I_inverter[i];
                 }else
-                    runnning_sum_current += 4095;
+                    runnning_sum_current += 4095; // again += might be wrong
 
 
             }
@@ -104,7 +184,7 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline){
             //147.31 -88.65
 
 
-    if(ConversionCount == 9)
+    if(ConversionCount == 10)
     {
         ConversionCount = 0;
     }
@@ -112,6 +192,11 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline){
     {
         ConversionCount++;
     }
+
+
+
+
+
 
 
 
@@ -154,7 +239,6 @@ extern void motor_control(DATA_PIPELINE *data_pipeline, CONTROL *duty_control){
 }
 
 extern void chopper_control(DATA_PIPELINE *data_pipeline){
-
 
 
 }

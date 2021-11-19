@@ -41,7 +41,7 @@ __interrupt void adc_isr(void);
 
 
 
-
+#define ADC_TO_PWM_RATIO 2 // this is how many pulses are read per invter duty period
 
 
 
@@ -157,11 +157,9 @@ void main(void)
     PieVectTable.ADCINT = &adc_isr;
 
     //Encoder interrupt
-
     PieVectTable.EPWM1_INT = &prdTick;
 
     EDIS;      // This is needed to disable write to EALLOW protected registers
-
     //
     // Step 4. Initialize all the Device Peripherals:
     // This function is found in DSP2833x_InitPeripherals.c
@@ -189,7 +187,7 @@ void main(void)
     //
 
     EALLOW;
-    SysCtrlRegs.PCLKCR0.bit.TBCLKSYNC = 1;
+    SysCtrlRegs.PCLKCR0.bit.TBCLKSYNC = 1; // Here we synchronize pwm clocks
     // ADC CLOCK SETTINGS
 
     //Bitchboi bein a BIT of a problem
@@ -212,76 +210,6 @@ void main(void)
 
 
 
-/*
-
-    //
-    // Configure ADC
-    //
-    AdcRegs.ADCMAXCONV.all = 0x0001;       // Setup 2 conv's on SEQ1
-    AdcRegs.ADCCHSELSEQ1.bit.CONV00 = 0x1; // Setup ADCINA3 as 1st SEQ1 conv.
-    AdcRegs.ADCCHSELSEQ1.bit.CONV01 = 0x0; // Setup ADCINA2 as 2nd SEQ1 conv.
-
-    //
-    // Enable SOCA from ePWM to start SEQ1
-    //
-    AdcRegs.ADCTRL2.bit.EPWM_SOCA_SEQ1 = 1;
-    AdcRegs.ADCTRL2.bit.INT_ENA_SEQ1 = 1;  // Enable SEQ1 interrupt (every EOS)
-
-    //
-    // Assumes ePWM1 clock is already enabled in InitSysCtrl();
-    //
-    EPwm1Regs.ETSEL.bit.SOCAEN = 1;     // Enable SOC on A group
-    EPwm1Regs.ETSEL.bit.SOCASEL = 4;    // Select SOC from from CPMA on upcount
-    EPwm1Regs.ETPS.bit.SOCAPRD = 1;     // Generate pulse on 1st event
-    EPwm1Regs.CMPA.half.CMPA = 0x0080;  // Set compare A value
-    EPwm1Regs.TBPRD = 0xFFFF;           // Set period for ePWM1
-    EPwm1Regs.TBCTL.bit.CTRMODE = 0;    // count up and start
-
-
-*/
-/*
-    //
-    // Specific ADC setup for this example:
-    //
-
-    //
-    // Sequential mode: Sample rate   = 1/[(2+ACQ_PS)*ADC clock in ns]
-    //                      = 1/(3*40ns) =8.3MHz (for 150 MHz SYSCLKOUT)
-    //                     = 1/(3*80ns) =4.17MHz (for 100 MHz SYSCLKOUT)
-    // If Simultaneous mode enabled: Sample rate=1/[(3+ACQ_PS)*ADC clock in ns]
-    //
-    AdcRegs.ADCTRL1.bit.ACQ_PS = ADC_SHCLK;
-    AdcRegs.ADCTRL3.bit.ADCCLKPS = ADC_CKPS;
-    AdcRegs.ADCTRL1.bit.SEQ_CASC = 1;     // 1  Cascaded mode
-    AdcRegs.ADCCHSELSEQ1.bit.CONV00 = 0x0;
-    AdcRegs.ADCTRL1.bit.CONT_RUN = 1;     // Setup continuous run
-    AdcRegs.ADCTRL1.bit.SEQ_OVRD = 1;     // Enable Sequencer override feature
-    AdcRegs.ADCCHSELSEQ1.all = 0x0; // Initialize all ADC channel selects to A0
-    AdcRegs.ADCCHSELSEQ2.all = 0x0;
-    AdcRegs.ADCCHSELSEQ3.all = 0x0;
-    AdcRegs.ADCCHSELSEQ4.all = 0x0;
-
-    //
-    // convert and store in 8 results registers
-    //
-    AdcRegs.ADCMAXCONV.bit.MAX_CONV1 = 0x7;
-
-    //
-    // Start SEQ1
-    //
-    AdcRegs.ADCTRL2.all = 0x2000;
-
-
-
-
-
-
-
-
-
-
-    AdcRegs.ADCST.bit.INT_SEQ1_CLR = 1;
-*/
 
     // Configure ADC
     //
@@ -303,7 +231,7 @@ void main(void)
     EPwm4Regs.ETSEL.bit.SOCASEL = 4;    // Select SOC from from CPMA on upcount
     EPwm4Regs.ETPS.bit.SOCAPRD = 1;     // Generate pulse on 1st event
     EPwm4Regs.CMPA.half.CMPA = 0x0080;  // Set compare A value
-    EPwm4Regs.TBPRD = (Uint16) INVERTER_PERIOD/3;           // Set period for ePWM1
+    EPwm4Regs.TBPRD = (Uint16) INVERTER_PERIOD;           // Set period for ePWM1
     EPwm4Regs.TBCTL.bit.CTRMODE = 0;    // count up and start
 
 
@@ -374,6 +302,7 @@ motor_control_isr(void)
 
 __interrupt void
 adc_isr(void){
+
     // sample analogue signals
     data_sampling(&high_speed_pipeline);
 
@@ -384,8 +313,6 @@ adc_isr(void){
     AdcRegs.ADCST.bit.INT_SEQ1_CLR = 1;       // Clear INT SEQ1 bit
     PieCtrlRegs.PIEACK.all = PIEACK_GROUP1;   // Acknowledge interrupt to PIE
 }
-
-
 
 
 
@@ -400,6 +327,9 @@ adc_isr(void){
 __interrupt void
 high_speed_isr(void)
 {
+
+
+
     EPwm2TimerIntCount++;
     // can be found in HighSpeed.c
     // highest speed - run every time
