@@ -14,6 +14,9 @@
 //
 #include "DSP28x_Project.h"     // Device Headerfile and Examples Include File
 #include "p5_globals.h"
+#include <stdio.h>
+#include <math.h>
+#include <string.h>
 
 
 
@@ -40,6 +43,11 @@ __interrupt void adc_isr(void);
 #define TBCTLVAL  0x200E      // up-down count, timebase=SYSCLKOUT
 
 
+#define LSPCLK_FREQ CPU_CLK/4
+#define SCI_FREQ 115200
+#define SCI_PRD (LSPCLK_FREQ/(SCI_FREQ*8))-1
+
+
 
 #define ADC_TO_PWM_RATIO 2 // this is how many pulses are read per invter duty period
 
@@ -55,6 +63,12 @@ void BoardStartup(void);
 __interrupt void high_speed_isr(void);
 __interrupt void motor_control_isr(void);
 __interrupt void prdTick(void);
+
+
+
+void reverse(char* str, int len);
+int intToStr(int x, char str[], int d);
+void ftoa(float n, char* res, int afterpoint);
 
 
 //
@@ -88,6 +102,9 @@ POSSPEED qep_posspeed=POSSPEED_DEFAULTS;
 //
 void main(void)
 {
+
+    char *msg;
+
     //
     // Step 1. Initialize System Control:
     // PLL, WatchDog, enable Peripheral Clocks
@@ -103,6 +120,8 @@ void main(void)
     // InitGpio();  // Skipped for this example
 
     //
+
+
 
 
     InitInverterPWM();       // Initialize the PWM GPIO we actually want to use // GPIO 2, 3
@@ -180,7 +199,14 @@ void main(void)
 
     InitEQepGpio();
 
+    InitSciaGpio();         //Init GPIO for communication
+
+    fifo_init();      // Initialize the SCI FIFO
+    scia_echoback_init();  // Initialize SCI for echoback
+
     BoardStartup();
+
+
 
     //
     // Specific clock setting for this example:
@@ -281,7 +307,38 @@ void main(void)
     //
     for(;;)
     {
-       // __asm("          NOP");
+
+        /*
+        int test_length = 100;
+        char teststring[test_length];
+        int n;
+        for (n = 0; n< test_length; n++;)
+        {
+            if (n < 5)
+            {
+                teststring[n] =
+            }
+            teststring(n) = 0;
+        }
+
+
+        msg = "this is a line:";
+        teststring[0] = 'a';
+
+        teststring[1] = 'b';
+
+        //strcat(msg, (int) high_speed_pipeline.V_p2p);
+        //strcat(teststring, msg);
+        //sprintf(msg, "%f", high_speed_pipeline.V_DC_AVRG);
+        scia_msg(teststring);
+*/
+
+            char res[20];
+           float n = 233.007;
+           ftoa(n, res, 4);
+           scia_msg(res);
+
+
     }
 }
 
@@ -563,7 +620,151 @@ void BoardStartup(){
 
 
 }
+
+void
+fifo_init()
+{
+    SciaRegs.SCIFFTX.all=0xE040;
+    SciaRegs.SCIFFRX.all=0x204f;
+    SciaRegs.SCIFFCT.all=0x0;
+}
+
+
+
+//
+// scia_echoback_init - Test 1,SCIA  DLB, 8-bit word, baud rate 0x000F,
+// default, 1 STOP bit, no parity
+//
+void
+scia_echoback_init()
+{
+    //
+    // Note: Clocks were turned on to the SCIA peripheral
+    // in the InitSysCtrl() function
+    //
+
+    // 1 stop bit,  No loopback, No parity,8 char bits,
+    // async mode, idle-line protocol
+    //
+    SciaRegs.SCICCR.all =0x0007;
+
+    //
+    // enable TX, RX, internal SCICLK,
+    // Disable RX ERR, SLEEP, TXWAKE
+    //
+    SciaRegs.SCICTL1.all =0x0003;
+    SciaRegs.SCICTL2.all =0x0003;
+    SciaRegs.SCICTL2.bit.TXINTENA =0;
+    SciaRegs.SCICTL2.bit.RXBKINTENA =0;
+#if (CPU_FRQ_150MHZ)
+    SciaRegs.SCIHBAUD    =0x0000;  // 9600 baud @LSPCLK = 37.5MHz.
+    SciaRegs.SCILBAUD    =SCI_PRD;
+#endif
+#if (CPU_FRQ_100MHZ)
+    SciaRegs.SCIHBAUD    =0x0001;  // 9600 baud @LSPCLK = 20MHz.
+    SciaRegs.SCILBAUD    =0x0044;
+#endif
+    SciaRegs.SCICTL1.all =0x0023;  // Relinquish SCI from Reset
+}
+
+//
+// scia_xmit - Transmit a character from the SCI
+//
+void
+scia_xmit(int a)
+{
+    while (SciaRegs.SCIFFTX.bit.TXFFST != 0)
+    {
+
+    }
+    SciaRegs.SCITXBUF=a;
+}
+
+//'1'
+// scia_msg -
+//
+void
+scia_msg(char * msg)
+{
+    int i;
+    i = 0;
+    while(msg[i] != '\0')
+    {
+        scia_xmit(msg[i]);
+        i++;
+    }
+}
+
+
+
 //
 // End of File
 //
+
+
+
+
+
+
+
+void reverse(char* str, int len)
+{
+    int i = 0, j = len - 1, temp;
+    while (i < j) {
+        temp = str[i];
+        str[i] = str[j];
+        str[j] = temp;
+        i++;
+        j--;
+    }
+}
+
+
+
+// Converts a given integer x to string str[].
+// d is the number of digits required in the output.
+// If d is more than the number of digits in x,
+// then 0s are added at the beginning.
+int intToStr(int x, char str[], int d)
+{
+    int i = 0;
+    while (x) {
+        str[i++] = (x % 10) + '0';
+        x = x / 10;
+    }
+
+    // If number of digits required is more, then
+    // add 0s at the beginning
+    while (i < d)
+        str[i++] = '0';
+
+    reverse(str, i);
+    str[i] = '\0';
+    return i;
+}
+
+// Converts a floating-point/double number to a string.
+void ftoa(float n, char* res, int afterpoint)
+{
+    // Extract integer part
+    int ipart = (int)n;
+
+    // Extract floating part
+    float fpart = n - (float)ipart;
+
+    // convert integer part to string
+    int i = intToStr(ipart, res, 0);
+
+    // check for display option after point
+    if (afterpoint != 0) {
+        res[i] = '.'; // add dot
+
+        // Get the value of fraction part upto given no.
+        // of points after dot. The third parameter
+        // is needed to handle cases like 233.007
+        //fpart = fpart * pow(10, afterpoint);
+        fpart = fpart * 10000;
+        intToStr((int)fpart, res + i + 1, afterpoint);
+    }
+}
 

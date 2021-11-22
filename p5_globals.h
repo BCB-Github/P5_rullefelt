@@ -32,7 +32,7 @@
 //
 
 #define  MOTOR_DEADBAND   50  // skal kigges på senere
-#define  INVERTER_PERIOD 750     //TB CLOCK CYCLES // TIDLIGERE val
+#define  INVERTER_PERIOD 1000     //TB CLOCK CYCLES // TIDLIGERE val
 #define  INVERTER_START_DUTY  50 // duty cycle start value - duty value // [%]
 #define  CONTROL_PERIOD 750      //
 
@@ -53,6 +53,15 @@ extern void encoder(void); // unclear
 extern void motor_control(DATA_PIPELINE_handle, CONTROL_handle);
 extern void chopper_control(DATA_PIPELINE_handle);
 
+
+//Communication prototypes
+
+
+extern void fifo_init(void);
+extern void InitSciaGpio(void);
+extern void scia_echoback_init(void);
+extern void scia_xmit(int a);
+extern void scia_msg (char * msg);
 
 
 
