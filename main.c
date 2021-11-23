@@ -64,6 +64,10 @@ __interrupt void high_speed_isr(void);
 __interrupt void motor_control_isr(void);
 __interrupt void prdTick(void);
 
+// TIMERS
+__interrupt void cpu_timer1_isr(void);
+__interrupt void cpu_timer2_isr(void);
+
 
 
 void reverse(char* str, int len);
@@ -173,6 +177,10 @@ void main(void)
     PieVectTable.EPWM2_INT = &high_speed_isr; // function that runs during interrupt
     PieVectTable.EPWM3_INT = &motor_control_isr;
 
+    // TIMERS
+    PieVectTable.XINT13 = &cpu_timer1_isr;
+    PieVectTable.TINT2 = &cpu_timer2_isr;
+
     PieVectTable.ADCINT = &adc_isr;
 
     //Encoder interrupt
@@ -184,6 +192,20 @@ void main(void)
     // This function is found in DSP2833x_InitPeripherals.c
     //
     // InitPeripherals();  // Not required for this example
+
+
+    // MORE TIMER STUFF
+    InitCpuTimers();   // For this example, only initialize the Cpu Timers
+    ConfigCpuTimer(&CpuTimer1, 150, 100); // milliseconds
+    ConfigCpuTimer(&CpuTimer2, 150, 1000000); // seconds
+    CpuTimer1Regs.TCR.all = 0x4000; //write-only instruction to set TSS bit = 0
+    CpuTimer2Regs.TCR.all = 0x4000; //write-only instruction to set TSS bit = 0
+
+
+
+
+
+
     EALLOW;
     SysCtrlRegs.PCLKCR0.bit.TBCLKSYNC = 0;
     EDIS;
@@ -279,6 +301,14 @@ void main(void)
     //
     IER |= M_INT3;
 
+    // TIMER THINGS
+    IER |= M_INT13;
+    IER |= M_INT14;
+    EINT;   // Enable Global interrupt INTM
+    ERTM;   // Enable Global realtime interrupt DBGM
+
+
+
     //
     // Enable EPWM INTn in the PIE: Group 3 interrupt 1-3
     //
@@ -308,35 +338,85 @@ void main(void)
     for(;;)
     {
 
-        /*
-        int test_length = 100;
-        char teststring[test_length];
-        int n;
-        for (n = 0; n< test_length; n++;)
+
+
+
+        char recieved = SciaRegs.SCIRXBUF.all;
+
+
+        int res_length = 8;
+        int msg_length = 2 * res_length + 1; // temperorary definition
+        char send_msg[17];
+
+        char comma = ',';
+        char endline = 'n';
+        char period = '.';
+        char negative_sign = '-';
+        char zero_char = '0';
+        int negative_res2 = 0;
+
+
+        char serial_output[100];
+
+        char i_out_string[10];
+        char v_out_string[10];
+        char time_stamp_ms_string[10];
+        char time_stamp_s_string[10];
+
+        float v_out = high_speed_pipeline.V_DC_AVRG;
+        float i_out = high_speed_pipeline.I_avg;
+
+        int time_stamp_ms = CpuTimer1.InterruptCount;
+        int time_stamp_s = CpuTimer2.InterruptCount;
+
+        intToStr(time_stamp_ms,time_stamp_ms_string, 0);
+        intToStr(time_stamp_s, time_stamp_s_string, 0);
+
+
+        if (i_out < 0)
         {
-            if (n < 5)
-            {
-                teststring[n] =
-            }
-            teststring(n) = 0;
+            // well we can't get negative numbers.....
+            i_out = (-1) * i_out;
+            ftoa(i_out, i_out_string, 4);
+            negative_res2 = 1; // boolean for negative numbers
+        }
+
+        ftoa(v_out, v_out_string, 4);
+        ftoa(i_out, i_out_string, 4);
+
+
+        int zeros_before_ms = 0;
+        // start with putting in the seconds
+        strcpy(serial_output, time_stamp_s_string);
+        strncat(serial_output, &period, 1);
+        for (zeros_before_ms = 0; zeros_before_ms <4 - strlen(time_stamp_ms_string); zeros_before_ms ++ ) {
+            strncat(serial_output, &zero_char, 1);
+
+        }
+        strcat(serial_output, time_stamp_ms_string);
+        strncat(serial_output, &comma, 1);
+         strcat (serial_output,v_out_string);
+         strncat(serial_output, &comma, 1);
+         if (negative_res2 == 1){
+             strncat(serial_output, &negative_sign, 1); // negative check
+             negative_res2 = 0;
+         }
+         strcat (serial_output,i_out_string);
+         strncat(serial_output, &comma, 1);
+         strncat(serial_output, &endline, 1);
+
+        scia_msg(serial_output);
+        int clearer;
+        // This is just to clear the array
+        for (clearer = 0; clearer < 50; clearer++)
+        {
+            serial_output[clearer] = '\n';
         }
 
 
-        msg = "this is a line:";
-        teststring[0] = 'a';
 
-        teststring[1] = 'b';
 
-        //strcat(msg, (int) high_speed_pipeline.V_p2p);
-        //strcat(teststring, msg);
-        //sprintf(msg, "%f", high_speed_pipeline.V_DC_AVRG);
-        scia_msg(teststring);
-*/
 
-            char res[20];
-           float n = 233.007;
-           ftoa(n, res, 4);
-           scia_msg(res);
 
 
     }
@@ -766,5 +846,40 @@ void ftoa(float n, char* res, int afterpoint)
         fpart = fpart * 10000;
         intToStr((int)fpart, res + i + 1, afterpoint);
     }
+}
+
+
+
+// TIMERS
+//
+// cpu_timer1_isr -
+//
+__interrupt void
+cpu_timer1_isr(void)
+{
+    CpuTimer1.InterruptCount++;
+    if (CpuTimer1.InterruptCount == 10000){
+        CpuTimer1.InterruptCount = 0;
+    }
+
+    //
+    // The CPU acknowledges the interrupt.
+    //
+    EDIS;
+}
+
+//
+// cpu_timer2_isr -
+//
+__interrupt void
+cpu_timer2_isr(void)
+{
+    EALLOW;
+    CpuTimer2.InterruptCount++;
+
+    //
+    // The CPU acknowledges the interrupt.
+    //
+    EDIS;
 }
 
