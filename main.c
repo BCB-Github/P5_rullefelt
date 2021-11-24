@@ -22,6 +22,13 @@
 
 
 
+#define REFERENCE_VOLTAGE 24 ////WE WANT  A REFERENCE VOLTAGE TO BE THIS VALUE
+
+
+
+
+
+
 
 
 // ADC DEFINES
@@ -48,7 +55,6 @@ __interrupt void adc_isr(void);
 #define SCI_PRD (LSPCLK_FREQ/(SCI_FREQ*8))-1
 
 
-
 #define ADC_TO_PWM_RATIO 2 // this is how many pulses are read per invter duty period
 
 
@@ -57,6 +63,8 @@ __interrupt void adc_isr(void);
 // Function Prototypes
 //
 void InitInverterEPWM(void);
+void InitChopperEPWM(void);
+
 void InitEncoderEPWM(void);
 void InitEQepGpio(void);
 void BoardStartup(void);
@@ -69,6 +77,7 @@ __interrupt void cpu_timer1_isr(void);
 __interrupt void cpu_timer2_isr(void);
 
 
+void serial_send_data(DATA_PIPELINE_HANDLE);
 
 void reverse(char* str, int len);
 int intToStr(int x, char str[], int d);
@@ -83,6 +92,7 @@ Uint32  EPwm2TimerIntCount;
 Uint16 Interrupt_Count = 0;
 
 DATA_PIPELINE high_speed_pipeline = DATA_PIPELINE_DEFAULTS;
+DATA_PIPELINE data_sampling_pipeline = DATA_PIPELINE_DEFAULTS;
 
 CONTROL inverter_duty_control = CONTROL_defaults;
 
@@ -129,7 +139,7 @@ void main(void)
 
 
     InitInverterPWM();       // Initialize the PWM GPIO we actually want to use // GPIO 2, 3
-
+    InitChopperPWM();
 
     // Step 3. Clear all interrupts and initialize PIE vector table:
     // Disable CPU interrupts
@@ -163,7 +173,6 @@ void main(void)
     //
 
     //Duty control
-
     inverter_duty_control.integrator_value_1 = 50;
     inverter_duty_control.gain_1 = 0.01;
     inverter_duty_control.limiter_1 = 0;
@@ -216,11 +225,9 @@ void main(void)
 
     InitInverterEPWM();
     InitMotorControlEPWM();
-
+    InitChopperEPWM();
     InitEncoderEPWM();
-
     InitEQepGpio();
-
     InitSciaGpio();         //Init GPIO for communication
 
     fifo_init();      // Initialize the SCI FIFO
@@ -236,8 +243,8 @@ void main(void)
 
     EALLOW;
     SysCtrlRegs.PCLKCR0.bit.TBCLKSYNC = 1; // Here we synchronize pwm clocks
-    // ADC CLOCK SETTINGS
 
+    // ADC CLOCK SETTINGS
     //Bitchboi bein a BIT of a problem
     SysCtrlRegs.HISPCP.all = ADC_MODCLK;    // HSPCLK = SYSCLKOUT/ADC_MODCLK
     EDIS;
@@ -245,20 +252,10 @@ void main(void)
     //
     // Step 5. User specific code, enable interrupts
 
-
-
-
-
     // ADC
     //
     // InitPeripherals(); // Not required for this example
     InitAdc();         // For this example, init the ADC
-
-
-
-
-
-
     // Configure ADC
     //
     AdcRegs.ADCMAXCONV.all = 0x0001;       // Setup 2 conv's on SEQ1
@@ -287,8 +284,6 @@ void main(void)
     //
     // Initialize counters:
     EPwm2TimerIntCount = 0;
-
-
 
 
 
@@ -328,7 +323,7 @@ void main(void)
     EINT;       // Enable Global interrupt INTM
     ERTM;       // Enable Global realtime interrupt DBGM
 
-    qep_posspeed.init(&qep_posspeed);
+    qep_posspeed.init(&qep_posspeed); // start encoder count
 
 
     GpioDataRegs.GPASET.bit.GPIO11 = 1;         //Set pin 29 to on
@@ -337,81 +332,14 @@ void main(void)
     //
     for(;;)
     {
+        //char recieved = SciaRegs.SCIRXBUF.all; tror ikke vi skal bruge den her
 
 
+        // if we would control the size of what we send
+        //int msg_length = 2 * res_length + 1; // temporary definition
+       // char send_msg[17];
 
-
-        char recieved = SciaRegs.SCIRXBUF.all;
-
-
-        int res_length = 8;
-        int msg_length = 2 * res_length + 1; // temperorary definition
-        char send_msg[17];
-
-        char comma = ',';
-        char endline = 'n';
-        char period = '.';
-        char negative_sign = '-';
-        char zero_char = '0';
-        int negative_res2 = 0;
-
-
-        char serial_output[100];
-
-        char i_out_string[10];
-        char v_out_string[10];
-        char time_stamp_ms_string[10];
-        char time_stamp_s_string[10];
-
-        float v_out = high_speed_pipeline.V_DC_AVRG;
-        float i_out = high_speed_pipeline.I_avg;
-
-        int time_stamp_ms = CpuTimer1.InterruptCount;
-        int time_stamp_s = CpuTimer2.InterruptCount;
-
-        intToStr(time_stamp_ms,time_stamp_ms_string, 0);
-        intToStr(time_stamp_s, time_stamp_s_string, 0);
-
-
-        if (i_out < 0)
-        {
-            // well we can't get negative numbers.....
-            i_out = (-1) * i_out;
-            ftoa(i_out, i_out_string, 4);
-            negative_res2 = 1; // boolean for negative numbers
-        }
-
-        ftoa(v_out, v_out_string, 4);
-        ftoa(i_out, i_out_string, 4);
-
-
-        int zeros_before_ms = 0;
-        // start with putting in the seconds
-        strcpy(serial_output, time_stamp_s_string);
-        strncat(serial_output, &period, 1);
-        for (zeros_before_ms = 0; zeros_before_ms <4 - strlen(time_stamp_ms_string); zeros_before_ms ++ ) {
-            strncat(serial_output, &zero_char, 1);
-
-        }
-        strcat(serial_output, time_stamp_ms_string);
-        strncat(serial_output, &comma, 1);
-         strcat (serial_output,v_out_string);
-         strncat(serial_output, &comma, 1);
-         if (negative_res2 == 1){
-             strncat(serial_output, &negative_sign, 1); // negative check
-             negative_res2 = 0;
-         }
-         strcat (serial_output,i_out_string);
-         strncat(serial_output, &comma, 1);
-         strncat(serial_output, &endline, 1);
-
-        scia_msg(serial_output);
-        int clearer;
-        // This is just to clear the array
-        for (clearer = 0; clearer < 50; clearer++)
-        {
-            serial_output[clearer] = '\n';
-        }
+        serial_send_data(&data_sampling_pipeline);
 
 
 
@@ -441,7 +369,8 @@ __interrupt void
 adc_isr(void){
 
     // sample analogue signals
-    data_sampling(&high_speed_pipeline);
+    data_sampling(&high_speed_pipeline, &data_sampling_pipeline, &qep_posspeed);
+
 
     //
     // Reinitialize for next ADC sequence
@@ -464,8 +393,6 @@ adc_isr(void){
 __interrupt void
 high_speed_isr(void)
 {
-
-
 
     EPwm2TimerIntCount++;
     // can be found in HighSpeed.c
@@ -578,6 +505,135 @@ InitInverterEPWM()
     // ET_3RD SHOULD MAYBE BE CHAnged
     EPwm2Regs.ETPS.bit.INTPRD =  ET_3RD;           // Generate INT on 3rd event
 }
+
+
+void InitChopperEPWM()
+{
+
+    // we're just copying and pasting the code from the inverter pwm into the chopper
+    // chopper should just have the same interval as the invert, because why not
+    EPwm6Regs.TBPRD = INVERTER_PERIOD;                        // Set timer period
+    EPwm6Regs.TBPHS.half.TBPHS = 0x0000;           // Phase is 0
+    EPwm6Regs.TBCTR = 0x0000;                      // Clear counter
+    //
+    // Setup TBCLK
+    //
+    EPwm6Regs.TBCTL.bit.CTRMODE = TB_COUNT_UPDOWN; // Count up
+    EPwm6Regs.TBCTL.bit.PHSEN = TB_DISABLE;        // Disable phase loading
+    EPwm6Regs.TBCTL.bit.HSPCLKDIV = TB_DIV2;       // Clock ratio to SYSCLKOUT
+    EPwm6Regs.TBCTL.bit.CLKDIV = TB_DIV2;  // Slow just to observe on the scope
+
+    //
+    //
+    //Setup compare
+    //
+    EPwm6Regs.CMPA.half.CMPA = 0; // initalize duty cycle to zero
+
+    //
+    // Set actions
+    //
+    EPwm6Regs.AQCTLA.bit.CAU = AQ_SET;             // Set PWM4A on Zero
+    EPwm6Regs.AQCTLA.bit.CAD = AQ_CLEAR;
+
+    //
+    // Active Low complementary PWMs - setup the deadband
+    //i guess no deadband for the chopper
+    //EPwm2Regs.DBCTL.bit.OUT_MODE = DB_FULL_ENABLE;
+    //EPwm2Regs.DBCTL.bit.POLSEL = DB_ACTV_HIC;
+    //EPwm2Regs.DBCTL.bit.IN_MODE = DBA_ALL;
+
+
+    //Deadband is set here
+    //EPwm2Regs.DBRED = MOTOR_DEADBAND;
+    //EPwm2Regs.DBFED = MOTOR_DEADBAND;
+
+
+
+    // Interrupt where we will modify the deadband
+    EPwm6Regs.ETSEL.bit.INTSEL = ET_CTR_ZERO;      // Select INT on Zero event
+    EPwm6Regs.ETSEL.bit.INTEN = 1;                 // Enable INT
+
+    // ET_3RD SHOULD MAYBE BE CHAnged
+    EPwm6Regs.ETPS.bit.INTPRD =  ET_3RD;           // Generate INT on 3rd event
+
+
+
+}
+
+
+
+void serial_send_data(DATA_PIPELINE * highspeed_data_pipeline){
+            DATA_PIPELINE data_sampling = data_sampling_pipeline;
+
+            char comma = ',';
+            char endline = 'n';
+            char period = '.';
+            char negative_sign = '-';
+            char zero_char = '0';
+            int negative_res2 = 0;
+
+
+            char serial_output[100];
+
+            char i_out_string[10];
+            char v_out_string[10];
+            char time_stamp_ms_string[10];
+            char time_stamp_s_string[10];
+            char rpm_out_string[10];
+
+            float v_out = data_sampling.V_DC_AVRG;
+            float i_out = data_sampling.I_avg;
+            int rpm_out = data_sampling.rpm;
+            int time_stamp_ms =data_sampling.time_on_ms ;
+            int time_stamp_s = data_sampling.time_on_s;
+
+            intToStr(time_stamp_ms,time_stamp_ms_string, 0);
+            intToStr(time_stamp_s, time_stamp_s_string, 0);
+            intToStr(rpm_out, rpm_out_string, 0);
+
+
+            if (i_out < 0)
+            {
+                // well we can't get negative numbers.....
+                i_out = (-1) * i_out;
+                ftoa(i_out, i_out_string, 4);
+                negative_res2 = 1; // boolean for negative numbers
+            }
+
+            ftoa(v_out, v_out_string, 4);
+            ftoa(i_out, i_out_string, 4);
+
+
+            int zeros_before_ms = 0;
+            // start with putting in the seconds
+            strcpy(serial_output, time_stamp_s_string);
+            strncat(serial_output, &period, 1);
+            for (zeros_before_ms = 0; zeros_before_ms <4 - strlen(time_stamp_ms_string); zeros_before_ms ++ ) {
+                strncat(serial_output, &zero_char, 1);
+
+            }
+            strcat(serial_output, time_stamp_ms_string);
+            strncat(serial_output, &comma, 1);
+             strcat (serial_output,v_out_string);
+             strncat(serial_output, &comma, 1);
+             if (negative_res2 == 1){
+                 strncat(serial_output, &negative_sign, 1); // negative check
+                 negative_res2 = 0;
+             }
+             strcat (serial_output,i_out_string);
+             strncat(serial_output, &comma, 1);
+             strcat (serial_output,rpm_out_string);
+             strncat(serial_output, &endline, 1);
+
+            scia_msg(serial_output);
+            int i = 0;
+            for (i = 0; i < 100; i++){
+                serial_output[i] = '0';
+            }
+}
+
+
+
 
 
 

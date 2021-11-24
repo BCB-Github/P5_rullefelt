@@ -49,7 +49,6 @@ long adc_pwm_time_difference = 0;
 
  void pwm_update(DATA_PIPELINE *data_pipeline, CONTROL *inverter_duty_control){
 
-
      /// DEBUGGING
      pwm_time_stamp = CpuTimer2Regs.TIM.all;
 
@@ -76,8 +75,6 @@ long adc_pwm_time_difference = 0;
 
 
 
-
-
     // this is where duty cycle for the inverter h bridge will be updated
     double Val = INVERTER_PERIOD;
     CONTROL_ramp_filter(inverter_duty_control);
@@ -90,7 +87,7 @@ long adc_pwm_time_difference = 0;
     //EPwm2Regs.CMPB = (Uint16) duty_cycle;
 }
 
-extern void data_sampling(DATA_PIPELINE *data_pipeline){
+extern void data_sampling(DATA_PIPELINE *data_pipeline, DATA_PIPELINE *data_sampling_pipeline,  POSSPEED *poss_speed){
 
     adc_time_stamp_counter++;
     if (adc_time_stamp_counter == 2){
@@ -152,6 +149,7 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline){
 
 
 
+
             float runnning_sum_current = 0;
             float running_current_max = data_pipeline->I_inverter[1];
             float running_current_min = data_pipeline->I_inverter[1];
@@ -183,6 +181,12 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline){
             data_pipeline->I_p2p = running_current_max-running_current_min;
             //147.31 -88.65
 
+            // put data into the data_sampling_buffer
+            data_sampling_pipeline->I_avg = data_pipeline->I_avg;
+            data_sampling_pipeline->V_DC_AVRG = data_pipeline->V_DC_AVRG;
+            data_sampling_pipeline->time_on_ms = CpuTimer1.InterruptCount;
+            data_sampling_pipeline->time_on_s = CpuTimer2.InterruptCount;
+            data_sampling_pipeline->rpm = poss_speed->SpeedRpm_fr;
 
     if(ConversionCount == 10)
     {
@@ -239,7 +243,16 @@ extern void motor_control(DATA_PIPELINE *data_pipeline, CONTROL *duty_control){
 }
 
 extern void chopper_control(DATA_PIPELINE *data_pipeline){
+    if (data_pipeline->V_DC_AVRG > (data_pipeline->V_ref * 1.1) ){
 
+        // make duty cycle 100 %percent
+        EPwm6Regs.CMPA.half.CMPA = (Uint16) INVERTER_PERIOD;
+    }else{
+        EPwm6Regs.CMPA.half.CMPA = 0;
+    }
+
+    // chopper control
+    // here we want to check if the voltage over the motor is over the rated voltage
 
 }
 

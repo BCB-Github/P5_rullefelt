@@ -43,12 +43,15 @@
 //// group defined function prototypes
 extern void InitInverterPWM(void);
 extern void InitMotorControlEPWM(void);
+extern void InitChopperPWM(void);
+
 
 
 //function protypes
 // run in high speed isr
 extern void pwm_update(DATA_PIPELINE_handle, CONTROL_handle);
-extern void data_sampling(DATA_PIPELINE_handle);
+extern void data_sampling(DATA_PIPELINE_HANDLE, DATA_PIPELINE_HANDLE,  POSSPEED_HANDLE);
+//extern void data_sampling(DATA_PIPELINE_handle);
 extern void encoder(void); // unclear
 extern void motor_control(DATA_PIPELINE_handle, CONTROL_handle);
 extern void chopper_control(DATA_PIPELINE_handle);

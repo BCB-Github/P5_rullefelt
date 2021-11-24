@@ -12,7 +12,6 @@ void CONTROL_ramp_filter(CONTROL *control_loop){
     int ramp_limiter;
 
 
-
     //Extract values from struct
 
     old_intgr = control_loop->integrator_value_1;

@@ -37,8 +37,9 @@ typedef struct
 
     float T_ref;            // reference torque from non deterministic loop
     float V_ref;            // Reference voltage from... somewhere?
-    float time_on;         // time since device turned on
-
+    int time_on_s;         // time since device turned on
+    int time_on_ms;         //
+    float rpm;              // rpm from encoder
 
     // Function prototypes. Actual functions are found in DataPipeline.c
     //void (*init)();         // Pointer to the init function
@@ -50,7 +51,7 @@ typedef DATA_PIPELINE *DATA_PIPELINE_handle;
 
 
 // COME BACK TO
-#define DATA_PIPELINE_DEFAULTS {0x0, 0x0, 50,0x0, 0x0, 0x0, 0x0, 0x0,0x0,0x0}//, \
+#define DATA_PIPELINE_DEFAULTS {0x0, 0x0, 50,0x0, 0x0, 0x0, 0x0, 0x0,0x0,0x0, 0x0, 0x0}//, \
         (void (*)(long))DATA_PIPELINE_Init, \
         (void (*)(long))DATA_PIPELINE_Calc }
 
