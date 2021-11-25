@@ -135,8 +135,6 @@ void main(void)
     //
     // Step 2. Initialize GPIO:
 
-
-
     InitInverterPWM();       // Initialize the PWM GPIO we for the inverter // GPIO 2, 3
     InitChopperPWM();       // chopper has GPIO 10
 
@@ -283,7 +281,6 @@ void main(void)
     //
     PieCtrlRegs.PIEIER3.bit.INTx1 = 1; /// NOT USED
     PieCtrlRegs.PIEIER1.bit.INTx6 = 1; // adc probably
-
     PieCtrlRegs.PIEIER3.bit.INTx2 = 1; // inverter PWM
     PieCtrlRegs.PIEIER3.bit.INTx3 = 1; // PIE for  inverter control (MAIN CONTROL LOOP)
     PieCtrlRegs.PIEIER3.bit.INTx4 = 1;
@@ -379,7 +376,6 @@ high_speed_isr(void)
 
     // only run the motor and chopper control at one tenth of the frequency of the sampling
     if (EPwm2TimerIntCount == 10) {
-
     // 1/10 of the speed of the high speed
     motor_control(&high_speed_pipeline, &inverter_duty_control);
     //
@@ -747,8 +743,8 @@ void InitAdcRegs(){
         AdcRegs.ADCCHSELSEQ1.bit.CONV02 = 0x2; // Setup ADCINA1 as 3rd SEQ conv.
         AdcRegs.ADCCHSELSEQ1.bit.CONV03 = 0x3; // Setup ADCINA0 as 4th SEQ conv.
 
-        AdcRegs.ADCCHSELSEQ2.bit.CONV04 = 0x4; // Setup ADCINA4 as 5th SEQ conv.
-        AdcRegs.ADCCHSELSEQ2.bit.CONV05 = 0x5; // Setup ADCINA5 as 6th SEQ conv.
+        //AdcRegs.ADCCHSELSEQ2.bit.CONV04 = 0x4; // Setup ADCINA4 as 5th SEQ conv.
+        //AdcRegs.ADCCHSELSEQ2.bit.CONV05 = 0x5; // Setup ADCINA5 as 6th SEQ conv.
 
         //
         // Enable SOCA from ePWM to start SEQ1 and SEQ2
@@ -757,9 +753,9 @@ void InitAdcRegs(){
 
         AdcRegs.ADCTRL2.bit.INT_ENA_SEQ1 = 1;  // Enable SEQ1 interrupt (every EOS)
 
-        AdcRegs.ADCTRL2.bit.EPWM_SOCB_SEQ2 = 1;
+        //AdcRegs.ADCTRL2.bit.EPWM_SOCB_SEQ2 = 1;
 
-        AdcRegs.ADCTRL2.bit.INT_ENA_SEQ2 = 1;  // Enable SEQ1 interrupt (every EOS)
+        //AdcRegs.ADCTRL2.bit.INT_ENA_SEQ2 = 1;  // Enable SEQ1 interrupt (every EOS)
 
         //
         // Assumes ePWM1 clock is already enabled in InitSysCtrl();

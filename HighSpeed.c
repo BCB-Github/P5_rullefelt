@@ -123,8 +123,8 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline, DATA_PIPELINE *data_samp
             data_pipeline->V_DC[ConversionCount] = AdcRegs.ADCRESULT1>>4;
             data_pipeline->I_chopper[ConversionCount] = AdcRegs.ADCRESULT2>>4;
             data_pipeline->V_A[ConversionCount] = AdcRegs.ADCRESULT3>>4;
-            data_pipeline->V_B[ConversionCount] = AdcRegs.ADCRESULT4>>4;
-            data_pipeline->V_C[ConversionCount] = AdcRegs.ADCRESULT5>>4;
+           // data_pipeline->V_B[ConversionCount] = AdcRegs.ADCRESULT4>>4;
+           // data_pipeline->V_C[ConversionCount] = AdcRegs.ADCRESULT5>>4;
 
 
 
