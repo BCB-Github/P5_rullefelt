@@ -68,6 +68,9 @@ void InitChopperEPWM(void);
 void InitEncoderEPWM(void);
 void InitEQepGpio(void);
 void BoardStartup(void);
+void InitAdcRegs(void);
+
+
 __interrupt void high_speed_isr(void);
 __interrupt void motor_control_isr(void);
 __interrupt void prdTick(void);
@@ -93,6 +96,8 @@ Uint16 Interrupt_Count = 0;
 
 DATA_PIPELINE high_speed_pipeline = DATA_PIPELINE_DEFAULTS;
 DATA_PIPELINE data_sampling_pipeline = DATA_PIPELINE_DEFAULTS;
+DATA_PIPELINE data_send = DATA_PIPELINE_DEFAULTS;
+
 
 CONTROL inverter_duty_control = CONTROL_defaults;
 
@@ -229,6 +234,7 @@ void main(void)
     InitEncoderEPWM();
     InitEQepGpio();
     InitSciaGpio();         //Init GPIO for communication
+    InitAdcRegs();
 
     fifo_init();      // Initialize the SCI FIFO
     scia_echoback_init();  // Initialize SCI for echoback
@@ -256,29 +262,7 @@ void main(void)
     //
     // InitPeripherals(); // Not required for this example
     InitAdc();         // For this example, init the ADC
-    // Configure ADC
-    //
-    AdcRegs.ADCMAXCONV.all = 0x0001;       // Setup 2 conv's on SEQ1
-    AdcRegs.ADCCHSELSEQ1.bit.CONV00 = 0x3; // Setup ADCINA3 as 1st SEQ1 conv.
-    AdcRegs.ADCCHSELSEQ1.bit.CONV01 = 0x2; // Setup ADCINA2 as 2nd SEQ1 conv.
-
-    //
-    // Enable SOCA from ePWM to start SEQ1
-    //
-    AdcRegs.ADCTRL2.bit.EPWM_SOCA_SEQ1 = 1;
-
-    AdcRegs.ADCTRL2.bit.INT_ENA_SEQ1 = 1;  // Enable SEQ1 interrupt (every EOS)
-
-    //
-    // Assumes ePWM1 clock is already enabled in InitSysCtrl();
-    //
-    EPwm4Regs.ETSEL.bit.SOCAEN = 1;     // Enable SOC on A group
-    EPwm4Regs.ETSEL.bit.SOCASEL = 4;    // Select SOC from from CPMA on upcount
-    EPwm4Regs.ETPS.bit.SOCAPRD = 1;     // Generate pulse on 1st event
-    EPwm4Regs.CMPA.half.CMPA = 0x0080;  // Set compare A value
-    EPwm4Regs.TBPRD = (Uint16) INVERTER_PERIOD;           // Set period for ePWM1
-    EPwm4Regs.TBCTL.bit.CTRMODE = 0;    // count up and start
-
+    InitAdcRegs();      //Init the ADC registers
 
 
     //
@@ -326,7 +310,7 @@ void main(void)
     qep_posspeed.init(&qep_posspeed); // start encoder count
 
 
-    GpioDataRegs.GPASET.bit.GPIO11 = 1;         //Set pin 29 to on
+    GpioDataRegs.GPASET.bit.GPIO11 = 1;         //Set pin 29 to on, pulling EN_GATE high
     //
     // Step 6. IDLE loop. Just sit and loop forever (optional)
     //
@@ -376,7 +360,10 @@ adc_isr(void){
     // Reinitialize for next ADC sequence
     //
     AdcRegs.ADCTRL2.bit.RST_SEQ1 = 1;         // Reset SEQ1
+    AdcRegs.ADCTRL2.bit.RST_SEQ2 = 1;         // Reset SEQ2
     AdcRegs.ADCST.bit.INT_SEQ1_CLR = 1;       // Clear INT SEQ1 bit
+    AdcRegs.ADCST.bit.INT_SEQ2_CLR = 1;       // Clear INT SEQ2 bit
+
     PieCtrlRegs.PIEACK.all = PIEACK_GROUP1;   // Acknowledge interrupt to PIE
 }
 
@@ -752,7 +739,50 @@ void BoardStartup(){
 
 
     EDIS;
+}
 
+void InitAdcRegs(){
+
+
+    Uint32 Val = INVERTER_PERIOD;
+    Uint32 DutyValue = INVERTER_START_DUTY;
+
+    Uint32 duty_cycle = (100 - DutyValue) *(double) Val/ 100 ;
+    // Configure ADC
+        //
+        AdcRegs.ADCMAXCONV.all = 0x0011;       // Setup 4 conv's on SEQ1 (Changed from 00001 and 2 conversions)
+        AdcRegs.ADCCHSELSEQ1.bit.CONV00 = 0x3; // Setup ADCINA3 as 1st SEQ1 conv.
+        AdcRegs.ADCCHSELSEQ1.bit.CONV01 = 0x2; // Setup ADCINA2 as 2nd SEQ1 conv.
+        AdcRegs.ADCCHSELSEQ1.bit.CONV02 = 0x1; // Setup ADCINA1 as 3rd SEQ conv.
+        AdcRegs.ADCCHSELSEQ1.bit.CONV03 = 0x0; // Setup ADCINA0 as 4th SEQ conv.
+
+        AdcRegs.ADCCHSELSEQ2.bit.CONV04 = 0x4; // Setup ADCINA4 as 5th SEQ conv.
+        AdcRegs.ADCCHSELSEQ2.bit.CONV05 = 0x5; // Setup ADCINA5 as 6th SEQ conv.
+
+        //
+        // Enable SOCA from ePWM to start SEQ1 and SEQ2
+        //
+        AdcRegs.ADCTRL2.bit.EPWM_SOCA_SEQ1 = 1;
+
+        AdcRegs.ADCTRL2.bit.INT_ENA_SEQ1 = 1;  // Enable SEQ1 interrupt (every EOS)
+
+        AdcRegs.ADCTRL2.bit.EPWM_SOCB_SEQ2 = 1;
+
+        AdcRegs.ADCTRL2.bit.INT_ENA_SEQ2 = 1;  // Enable SEQ1 interrupt (every EOS)
+
+        //
+        // Assumes ePWM1 clock is already enabled in InitSysCtrl();
+        //
+        EPwm4Regs.ETSEL.bit.SOCAEN = 1;     // Enable SOC on A group
+        EPwm4Regs.ETSEL.bit.SOCASEL = 4;    // Select SOC from from CPMA on upcount
+        EPwm4Regs.ETSEL.bit.SOCBEN = 1;     // Enable SOC on B group
+        EPwm4Regs.ETSEL.bit.SOCBSEL = 6;    // Select SOC from CMPB on upcount
+        EPwm4Regs.ETPS.bit.SOCAPRD = 1;     // Generate pulse on 1st event
+        EPwm4Regs.ETPS.bit.SOCBPRD = 1;     // Generate pulse on 1st event
+        EPwm4Regs.CMPA.half.CMPA = duty_cycle;  // Set compare A value
+        EPwm4Regs.CMPB = duty_cycle*2;            //Set compare B Value
+        EPwm4Regs.TBPRD = (Uint16) INVERTER_PERIOD;           // Set period for ePWM1
+        EPwm4Regs.TBCTL.bit.CTRMODE = 0;    // count up and start
 
 
 }
@@ -830,15 +860,6 @@ scia_msg(char * msg)
         i++;
     }
 }
-
-
-
-//
-// End of File
-//
-
-
-
 
 
 
@@ -938,4 +959,9 @@ cpu_timer2_isr(void)
     //
     EDIS;
 }
+
+
+//
+// End of File
+//
 

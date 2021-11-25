@@ -20,12 +20,16 @@ typedef struct
     float gain_1;
     float gain_2;
     float gain_3;
+    float point_1;
+    float point_2;
 
     // physical/artificial limiter
     float limiter_1;
     float limiter_2;
 
     float ref_val;
+
+    float old_measured_val;
 
     //Physical values
 
@@ -38,7 +42,7 @@ typedef CONTROL *CONTROL_handle;
 
 
 // COME BACK TO
-#define CONTROL_defaults {50,0, 0.001,1,1,0,0,0, \
+#define CONTROL_defaults {50,0, 0.001,1,1,0,0,0,0,0,0, \
         0.01,}
 
 void CONTROL_Init(void);
