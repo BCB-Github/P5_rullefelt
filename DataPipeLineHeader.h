@@ -31,6 +31,18 @@ typedef struct
     Uint16 inverter_duty_cycle;            // desired voltage over  inverter motor
     Uint16 I_inverter[10];       // averaged current over motor
     float I_avg;
+    // new inclusions
+    float I_chopper[10];
+    float I_chopper_AVRG;
+
+    float V_A[10];
+    float V_A_AVRG;
+
+    float V_B[10];
+    float V_B_AVRG;
+
+    float V_C[10];
+    float V_C_AVRG;
 
     float I_p2p;            //Peak to Peak values of current and voltage
     float V_p2p;
@@ -51,7 +63,7 @@ typedef DATA_PIPELINE *DATA_PIPELINE_handle;
 
 
 // COME BACK TO
-#define DATA_PIPELINE_DEFAULTS {0x0, 0x0, 50,0x0, 0x0, 0x0, 0x0, 0x0,0x0,0x0, 0x0, 0x0}//, \
+#define DATA_PIPELINE_DEFAULTS {0x0, 0x0, 50,0x0, 0x0, 0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0, 0x0, 0x0,0x0,0x0, 0x0, 0x0}//, \
         (void (*)(long))DATA_PIPELINE_Init, \
         (void (*)(long))DATA_PIPELINE_Calc }
 

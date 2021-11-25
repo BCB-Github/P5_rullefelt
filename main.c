@@ -4,9 +4,6 @@
 
 
 //! \b External \b Connections \n
-
-//!  - EPWM2A is on GPIO2
-//!  - EPWM2B is on GPIO3
 //
 //
 //
@@ -31,8 +28,6 @@
 
 
 
-// ADC DEFINES
-__interrupt void adc_isr(void);
 
 //
 // ADC module clock = HSPCLK/1      = 25.5MHz/(1)   = 25.0 MHz
@@ -69,19 +64,23 @@ void InitEncoderEPWM(void);
 void InitEQepGpio(void);
 void BoardStartup(void);
 void InitAdcRegs(void);
+void InitPieVectTableP5(void);
 
 
 __interrupt void high_speed_isr(void);
 __interrupt void motor_control_isr(void);
 __interrupt void prdTick(void);
+// ADC DEFINES
+__interrupt void adc_isr(void);
 
-// TIMERS
+// TIMERS - used for time stamping
 __interrupt void cpu_timer1_isr(void);
 __interrupt void cpu_timer2_isr(void);
 
 
-void serial_send_data(DATA_PIPELINE_HANDLE);
+void serial_send_data(DATA_PIPELINE_HANDLE); // convert and sent data from pipeline to sci terminal
 
+// these are borrowed libraries that convert from data values to strings that can be read by the serial port
 void reverse(char* str, int len);
 int intToStr(int x, char str[], int d);
 void ftoa(float n, char* res, int afterpoint);
@@ -94,13 +93,15 @@ Uint16  EPwm2_DB_Direction;
 Uint32  EPwm2TimerIntCount;
 Uint16 Interrupt_Count = 0;
 
+
+// initialize the pipelines that will be used by the  main file
 DATA_PIPELINE high_speed_pipeline = DATA_PIPELINE_DEFAULTS;
 DATA_PIPELINE data_sampling_pipeline = DATA_PIPELINE_DEFAULTS;
 DATA_PIPELINE data_send = DATA_PIPELINE_DEFAULTS;
 
-
 CONTROL inverter_duty_control = CONTROL_defaults;
 
+// initialize the encoder struct
 POSSPEED qep_posspeed=POSSPEED_DEFAULTS;
 
 
@@ -133,18 +134,11 @@ void main(void)
 
     //
     // Step 2. Initialize GPIO:
-    // This example function is found in the DSP2833x_Gpio.c file and
-    // illustrates how to set the GPIO to it's default state.
-    //
-    // InitGpio();  // Skipped for this example
-
-    //
 
 
 
-
-    InitInverterPWM();       // Initialize the PWM GPIO we actually want to use // GPIO 2, 3
-    InitChopperPWM();
+    InitInverterPWM();       // Initialize the PWM GPIO we for the inverter // GPIO 2, 3
+    InitChopperPWM();       // chopper has GPIO 10
 
     // Step 3. Clear all interrupts and initialize PIE vector table:
     // Disable CPU interrupts
@@ -155,8 +149,6 @@ void main(void)
     // Initialize the PIE control registers to their default state.
 
     InitPieCtrl();    // The default state is all PIE interrupts disabled and flags are cleared.
-
-
 
 
     // Disable CPU interrupts and clear all CPU interrupt flags
@@ -186,6 +178,8 @@ void main(void)
 
     // Interrupts that are used in this example are re-mapped to
     // ISR functions found within this file.
+    //InitPieVectTableP5(); // moved the init pie values here
+
     EALLOW;    // This is needed to write to EALLOW protected registers
     // Changes the duty cycle in the epwm function
     PieVectTable.EPWM2_INT = &high_speed_isr; // function that runs during interrupt
@@ -194,13 +188,12 @@ void main(void)
     // TIMERS
     PieVectTable.XINT13 = &cpu_timer1_isr;
     PieVectTable.TINT2 = &cpu_timer2_isr;
-
     PieVectTable.ADCINT = &adc_isr;
-
     //Encoder interrupt
     PieVectTable.EPWM1_INT = &prdTick;
 
     EDIS;      // This is needed to disable write to EALLOW protected registers
+
     //
     // Step 4. Initialize all the Device Peripherals:
     // This function is found in DSP2833x_InitPeripherals.c
@@ -227,7 +220,6 @@ void main(void)
 
 
     //Init everything here:
-
     InitInverterEPWM();
     InitMotorControlEPWM();
     InitChopperEPWM();
@@ -235,10 +227,8 @@ void main(void)
     InitEQepGpio();
     InitSciaGpio();         //Init GPIO for communication
     InitAdcRegs();
-
     fifo_init();      // Initialize the SCI FIFO
     scia_echoback_init();  // Initialize SCI for echoback
-
     BoardStartup();
 
 
@@ -280,7 +270,7 @@ void main(void)
     //
     IER |= M_INT3;
 
-    // TIMER THINGS
+    // TIMER interrupts
     IER |= M_INT13;
     IER |= M_INT14;
     EINT;   // Enable Global interrupt INTM
@@ -296,8 +286,6 @@ void main(void)
 
     PieCtrlRegs.PIEIER3.bit.INTx2 = 1; // inverter PWM
     PieCtrlRegs.PIEIER3.bit.INTx3 = 1; // PIE for  inverter control (MAIN CONTROL LOOP)
-
-
     PieCtrlRegs.PIEIER3.bit.INTx4 = 1;
 
 
@@ -310,23 +298,22 @@ void main(void)
     qep_posspeed.init(&qep_posspeed); // start encoder count
 
 
+    // only start the encoder switching after everything is initialized
     GpioDataRegs.GPASET.bit.GPIO11 = 1;         //Set pin 29 to on, pulling EN_GATE high
-    //
     // Step 6. IDLE loop. Just sit and loop forever (optional)
     //
+
+    // The idea is that now we want to initialize the voltage as the vref
+    //high_speed_pipeline.V_ref = AdcRegs.ADCRESULT1>>4;
     for(;;)
     {
-        //char recieved = SciaRegs.SCIRXBUF.all; tror ikke vi skal bruge den her
 
 
         // if we would control the size of what we send
         //int msg_length = 2 * res_length + 1; // temporary definition
        // char send_msg[17];
 
-        serial_send_data(&data_sampling_pipeline);
-
-
-
+        serial_send_data(&data_sampling_pipeline); // reads data form the data pipeline and sends it via sci
 
 
 
@@ -359,10 +346,13 @@ adc_isr(void){
     //
     // Reinitialize for next ADC sequence
     //
+
     AdcRegs.ADCTRL2.bit.RST_SEQ1 = 1;         // Reset SEQ1
     AdcRegs.ADCTRL2.bit.RST_SEQ2 = 1;         // Reset SEQ2
     AdcRegs.ADCST.bit.INT_SEQ1_CLR = 1;       // Clear INT SEQ1 bit
     AdcRegs.ADCST.bit.INT_SEQ2_CLR = 1;       // Clear INT SEQ2 bit
+
+    EPwm4Regs.ETCLR.bit.INT = 1;
 
     PieCtrlRegs.PIEACK.all = PIEACK_GROUP1;   // Acknowledge interrupt to PIE
 }
@@ -406,6 +396,7 @@ high_speed_isr(void)
     // Clear INT flag for this timer
     //
     EPwm2Regs.ETCLR.bit.INT = 1;
+
     // Acknowledge this interrupt to receive more interrupts from group 3
     PieCtrlRegs.PIEACK.all = PIEACK_GROUP3;
 }
@@ -535,7 +526,7 @@ void InitChopperEPWM()
     //EPwm2Regs.DBFED = MOTOR_DEADBAND;
 
 
-
+/*
     // Interrupt where we will modify the deadband
     EPwm6Regs.ETSEL.bit.INTSEL = ET_CTR_ZERO;      // Select INT on Zero event
     EPwm6Regs.ETSEL.bit.INTEN = 1;                 // Enable INT
@@ -543,7 +534,7 @@ void InitChopperEPWM()
     // ET_3RD SHOULD MAYBE BE CHAnged
     EPwm6Regs.ETPS.bit.INTPRD =  ET_3RD;           // Generate INT on 3rd event
 
-
+*/
 
 }
 
@@ -751,10 +742,10 @@ void InitAdcRegs(){
     // Configure ADC
         //
         AdcRegs.ADCMAXCONV.all = 0x0011;       // Setup 4 conv's on SEQ1 (Changed from 00001 and 2 conversions)
-        AdcRegs.ADCCHSELSEQ1.bit.CONV00 = 0x3; // Setup ADCINA3 as 1st SEQ1 conv.
-        AdcRegs.ADCCHSELSEQ1.bit.CONV01 = 0x2; // Setup ADCINA2 as 2nd SEQ1 conv.
-        AdcRegs.ADCCHSELSEQ1.bit.CONV02 = 0x1; // Setup ADCINA1 as 3rd SEQ conv.
-        AdcRegs.ADCCHSELSEQ1.bit.CONV03 = 0x0; // Setup ADCINA0 as 4th SEQ conv.
+        AdcRegs.ADCCHSELSEQ1.bit.CONV00 = 0x0; // Setup ADCINA3 as 1st SEQ1 conv.
+        AdcRegs.ADCCHSELSEQ1.bit.CONV01 = 0x1; // Setup ADCINA2 as 2nd SEQ1 conv.
+        AdcRegs.ADCCHSELSEQ1.bit.CONV02 = 0x2; // Setup ADCINA1 as 3rd SEQ conv.
+        AdcRegs.ADCCHSELSEQ1.bit.CONV03 = 0x3; // Setup ADCINA0 as 4th SEQ conv.
 
         AdcRegs.ADCCHSELSEQ2.bit.CONV04 = 0x4; // Setup ADCINA4 as 5th SEQ conv.
         AdcRegs.ADCCHSELSEQ2.bit.CONV05 = 0x5; // Setup ADCINA5 as 6th SEQ conv.
@@ -934,6 +925,7 @@ void ftoa(float n, char* res, int afterpoint)
 __interrupt void
 cpu_timer1_isr(void)
 {
+    EALLOW;
     CpuTimer1.InterruptCount++;
     if (CpuTimer1.InterruptCount == 10000){
         CpuTimer1.InterruptCount = 0;
@@ -958,7 +950,26 @@ cpu_timer2_isr(void)
     // The CPU acknowledges the interrupt.
     //
     EDIS;
+
 }
+
+
+void InitPieVectTableP5(void){
+
+    EALLOW;    // This is needed to write to EALLOW protected registers
+    // Changes the duty cycle in the epwm function
+    PieVectTable.EPWM2_INT = &high_speed_isr; // function that runs during interrupt
+    PieVectTable.EPWM3_INT = &motor_control_isr;
+    // TIMERS
+    PieVectTable.XINT13 = &cpu_timer1_isr;
+    PieVectTable.TINT2 = &cpu_timer2_isr;
+    PieVectTable.ADCINT = &adc_isr;
+    //Encoder interrupt
+    PieVectTable.EPWM1_INT = &prdTick;
+
+    EDIS;      // This is needed to disable write to EALLOW protected registers
+}
+
 
 
 //

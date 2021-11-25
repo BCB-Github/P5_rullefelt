@@ -121,9 +121,19 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline, DATA_PIPELINE *data_samp
 
             data_pipeline->I_inverter[ConversionCount] = AdcRegs.ADCRESULT0>>4;
             data_pipeline->V_DC[ConversionCount] = AdcRegs.ADCRESULT1>>4;
+            data_pipeline->I_chopper[ConversionCount] = AdcRegs.ADCRESULT2>>4;
+            data_pipeline->V_A[ConversionCount] = AdcRegs.ADCRESULT3>>4;
+            data_pipeline->V_B[ConversionCount] = AdcRegs.ADCRESULT4>>4;
+            data_pipeline->V_C[ConversionCount] = AdcRegs.ADCRESULT5>>4;
+
 
 
             float runnning_sum_voltage = 0;
+            float running_i_chopper = 0;
+            float running_sum_v_a = 0;
+            float running_sum_v_b = 0;
+            float running_sum_v_c = 0;
+
             float running_voltage_max = data_pipeline->V_DC[1];
             float running_voltage_min = data_pipeline->V_DC[1];
             int i = 0;
@@ -135,13 +145,28 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline, DATA_PIPELINE *data_samp
                     running_voltage_min = data_pipeline->V_DC[i];
                 }
 
+
+                running_i_chopper += data_pipeline->I_chopper[i];
+                running_sum_v_a += data_pipeline->V_A[i];
+                running_sum_v_b += data_pipeline->V_B[i];
+                running_sum_v_c += data_pipeline->V_C[i];
+
                 if (data_pipeline->V_DC[i] <= 4095){
                 runnning_sum_voltage +=data_pipeline->V_DC[i];
+
                 }else
                     runnning_sum_voltage += 4095; /// look at this
             }
 
             data_pipeline->V_DC_AVRG= 18.6*(((runnning_sum_voltage/10))*3/4096); //Conversion from the digial value, to the measured value, to the average dc value
+
+            data_pipeline->I_chopper_AVRG = running_i_chopper / 10;
+            data_pipeline->V_A_AVRG = (float) running_sum_v_a / 10;
+            data_pipeline->V_B_AVRG = (float) running_sum_v_b / 10;
+            data_pipeline->V_C_AVRG = (float) running_sum_v_c / 10;
+
+
+
 
             running_voltage_max = ((((running_voltage_max))*3/4096));
             running_voltage_min = ((((running_voltage_min))*3/4096));
@@ -151,8 +176,8 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline, DATA_PIPELINE *data_samp
 
 
             float runnning_sum_current = 0;
-            float running_current_max = data_pipeline->I_inverter[1];
-            float running_current_min = data_pipeline->I_inverter[1];
+            float running_current_max = data_pipeline->I_inverter[0];
+            float running_current_min = data_pipeline->I_inverter[0];
             i = 0;
             for (i = 0; i < 10; i++)
             {
@@ -187,6 +212,12 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline, DATA_PIPELINE *data_samp
             data_sampling_pipeline->time_on_ms = CpuTimer1.InterruptCount;
             data_sampling_pipeline->time_on_s = CpuTimer2.InterruptCount;
             data_sampling_pipeline->rpm = poss_speed->SpeedRpm_fr;
+            data_sampling_pipeline->V_A_AVRG = data_pipeline->V_A_AVRG;
+            data_sampling_pipeline->V_B_AVRG = data_pipeline->V_B_AVRG;
+            data_sampling_pipeline->V_C_AVRG = data_pipeline->V_C_AVRG;
+            data_sampling_pipeline->I_chopper_AVRG = data_pipeline->I_chopper_AVRG;
+
+
 
     if(ConversionCount == 10)
     {
@@ -253,6 +284,8 @@ extern void chopper_control(DATA_PIPELINE *data_pipeline){
 
     // chopper control
     // here we want to check if the voltage over the motor is over the rated voltage
+    EPwm6Regs.ETCLR.bit.INT = 1; // who know
+    float a;
 
 }
 
