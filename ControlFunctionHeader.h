@@ -8,7 +8,15 @@
 #ifndef CONTROLFUNCTIONHEADER_H_
 #define CONTROLFUNCTIONHEADER_H_
 
-
+#define B_DYNO 0.0091766
+#define C_DYNO 0.66655
+#define J_DYNO 0.01192
+#define N_GENERATOR 22
+#define N_ROLL 28
+#define D_ROLL 0.09
+#define D_WHEEL 0.55
+#define KG 0.072
+#define KP 0.07952
 //
 // Typedef for the structure of the control struct
 //
@@ -26,14 +34,24 @@ typedef struct
     // physical/artificial limiter
     float limiter_1;
     float limiter_2;
-
     float ref_val;
-
     float old_measured_val;
 
-    //Physical values
 
+    //Physical values
     float time_constant;
+    float b_dyno;
+    float c_dyno;
+    float h_dyno;
+    float n_generator;
+    float n_roll;
+    float d_roll;
+    float d_wheel;
+    float kg;
+    float kp;
+    float Ka;
+    float t_wheel_ref;
+
 
 } CONTROL;
 
@@ -43,7 +61,7 @@ typedef CONTROL *CONTROL_handle;
 
 // COME BACK TO
 #define CONTROL_defaults {50,0, 0.001,1,1,0,0,0,0,0,0, \
-        0.01,}
+        0.01,0, 0, B_DYNO, C_DYNO, J_DYNO, N_GENERATOR, N_ROLL, D_ROLL, D_WHEEL, KG, KP}
 
 void CONTROL_Init(void);
 void CONTROL_ramp_filter(CONTROL_handle);

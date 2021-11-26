@@ -123,14 +123,14 @@ InitChopperPWM(void){
     // This will enable the pullups for the specified pins.
     // Comment out other unwanted lines.
     //
-    GpioCtrlRegs.GPAPUD.bit.GPIO10 = 0;    // Enable pull-up on GPIO6 (EPWM4A)
+    GpioCtrlRegs.GPAPUD.bit.GPIO10 = 0;    // Enable pull-up on GPIO10 (EPWM4A)
 
     //
     // Configure ePWM-2 pins using GPIO regs
     // This specifies which of the possible GPIO pins will be ePWM2 functional
     // pins. Comment out other unwanted lines.
     //
-    GpioCtrlRegs.GPAMUX1.bit.GPIO10 = 1;   // Configure GPIO6 as EPWM4A
+    GpioCtrlRegs.GPAMUX1.bit.GPIO10 = 1;   // Configure GPIO10 as EPWM4A
 
     EDIS;
 

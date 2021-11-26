@@ -148,8 +148,8 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline, DATA_PIPELINE *data_samp
 
                 running_i_chopper += data_pipeline->I_chopper[i];
                 running_sum_v_a += data_pipeline->V_A[i];
-                running_sum_v_b += data_pipeline->V_B[i];
-                running_sum_v_c += data_pipeline->V_C[i];
+                //running_sum_v_b += data_pipeline->V_B[i];
+                //running_sum_v_c += data_pipeline->V_C[i];
 
                 if (data_pipeline->V_DC[i] <= 4095){
                 runnning_sum_voltage +=data_pipeline->V_DC[i];
@@ -162,8 +162,8 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline, DATA_PIPELINE *data_samp
 
             data_pipeline->I_chopper_AVRG = running_i_chopper / 10;
             data_pipeline->V_A_AVRG = (float) running_sum_v_a / 10;
-            data_pipeline->V_B_AVRG = (float) running_sum_v_b / 10;
-            data_pipeline->V_C_AVRG = (float) running_sum_v_c / 10;
+            //data_pipeline->V_B_AVRG = (float) running_sum_v_b / 10;
+            //data_pipeline->V_C_AVRG = (float) running_sum_v_c / 10;
 
 
 
@@ -213,8 +213,8 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline, DATA_PIPELINE *data_samp
             data_sampling_pipeline->time_on_s = CpuTimer2.InterruptCount;
             data_sampling_pipeline->rpm = poss_speed->SpeedRpm_fr;
             data_sampling_pipeline->V_A_AVRG = data_pipeline->V_A_AVRG;
-            data_sampling_pipeline->V_B_AVRG = data_pipeline->V_B_AVRG;
-            data_sampling_pipeline->V_C_AVRG = data_pipeline->V_C_AVRG;
+            //data_sampling_pipeline->V_B_AVRG = data_pipeline->V_B_AVRG;
+            //data_sampling_pipeline->V_C_AVRG = data_pipeline->V_C_AVRG;
             data_sampling_pipeline->I_chopper_AVRG = data_pipeline->I_chopper_AVRG;
 
 
@@ -242,6 +242,16 @@ extern void encoder(void){
 }
 
 extern void motor_control(DATA_PIPELINE *data_pipeline, CONTROL *duty_control){
+
+
+
+
+
+
+
+
+
+
 
 
 

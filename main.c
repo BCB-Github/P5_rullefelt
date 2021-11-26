@@ -296,7 +296,9 @@ void main(void)
 
 
     // only start the encoder switching after everything is initialized
-    GpioDataRegs.GPASET.bit.GPIO11 = 1;         //Set pin 29 to on, pulling EN_GATE high
+   // GpioDataRegs.GPASET.bit.GPIO04 = 1;
+    GpioCtrlRegs.GPAPUD.bit.GPIO4 = 1;
+    //Set pin 29 to on, pulling EN_GATE high
     // Step 6. IDLE loop. Just sit and loop forever (optional)
     //
 
@@ -557,13 +559,15 @@ void serial_send_data(DATA_PIPELINE * highspeed_data_pipeline){
 
             float v_out = data_sampling.V_DC_AVRG;
             float i_out = data_sampling.I_avg;
-            int rpm_out = data_sampling.rpm;
+            float rpm_out = data_sampling.rpm;
             int time_stamp_ms =data_sampling.time_on_ms ;
             int time_stamp_s = data_sampling.time_on_s;
 
             intToStr(time_stamp_ms,time_stamp_ms_string, 0);
             intToStr(time_stamp_s, time_stamp_s_string, 0);
-            intToStr(rpm_out, rpm_out_string, 0);
+            ftoa(rpm_out, rpm_out_string, 4);
+
+            //intToStr(rpm_out, rpm_out_string, 0);
 
 
             if (i_out < 0)
@@ -719,7 +723,7 @@ void BoardStartup(){
 
     EALLOW;
 
-    GpioCtrlRegs.GPADIR.bit.GPIO11 = 1;     //Use Pin 11
+    GpioCtrlRegs.GPADIR.bit.GPIO4 = 1;     //Use Pin 11
 
     //GpioCtrlRegs.GPAMUX2.bit.GPIO11 = 00;   //set mux to GPIO
 
@@ -738,10 +742,10 @@ void InitAdcRegs(){
     // Configure ADC
         //
         AdcRegs.ADCMAXCONV.all = 0x0011;       // Setup 4 conv's on SEQ1 (Changed from 00001 and 2 conversions)
-        AdcRegs.ADCCHSELSEQ1.bit.CONV00 = 0x0; // Setup ADCINA3 as 1st SEQ1 conv.
-        AdcRegs.ADCCHSELSEQ1.bit.CONV01 = 0x1; // Setup ADCINA2 as 2nd SEQ1 conv.
-        AdcRegs.ADCCHSELSEQ1.bit.CONV02 = 0x2; // Setup ADCINA1 as 3rd SEQ conv.
-        AdcRegs.ADCCHSELSEQ1.bit.CONV03 = 0x3; // Setup ADCINA0 as 4th SEQ conv.
+        AdcRegs.ADCCHSELSEQ1.bit.CONV00 = 0x0; // Setup ADCINA0 as 1st SEQ1 conv.
+        AdcRegs.ADCCHSELSEQ1.bit.CONV01 = 0x1; // Setup ADCINA1 as 2nd SEQ1 conv.
+        AdcRegs.ADCCHSELSEQ1.bit.CONV02 = 0x2; // Setup ADCINA2 as 3rd SEQ conv.
+        AdcRegs.ADCCHSELSEQ1.bit.CONV03 = 0x3; // Setup ADCINA3 as 4th SEQ conv.
 
         //AdcRegs.ADCCHSELSEQ2.bit.CONV04 = 0x4; // Setup ADCINA4 as 5th SEQ conv.
         //AdcRegs.ADCCHSELSEQ2.bit.CONV05 = 0x5; // Setup ADCINA5 as 6th SEQ conv.
