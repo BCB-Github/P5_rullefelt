@@ -207,6 +207,7 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline, DATA_PIPELINE *data_samp
             data_pipeline->I_p2p = running_current_max-running_current_min;
             //147.31 -88.65
 
+
             // put data into the data_sampling_buffer
             data_sampling_pipeline->I_avg = data_pipeline->I_avg;
             data_sampling_pipeline->V_DC_AVRG = data_pipeline->V_DC_AVRG;
@@ -214,9 +215,10 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline, DATA_PIPELINE *data_samp
             data_sampling_pipeline->time_on_s = CpuTimer2.InterruptCount;
             data_sampling_pipeline->rpm = poss_speed->SpeedRpm_fr;
             data_sampling_pipeline->V_A_AVRG = data_pipeline->V_A_AVRG;
-            //data_sampling_pipeline->V_B_AVRG = data_pipeline->V_B_AVRG;
+            data_sampling_pipeline->V_B_AVRG = data_pipeline->V_B_AVRG;
             //data_sampling_pipeline->V_C_AVRG = data_pipeline->V_C_AVRG;
             data_sampling_pipeline->I_chopper_AVRG = data_pipeline->I_chopper_AVRG;
+
 
             if (data_pipeline->I_avg > 100 || data_pipeline->V_DC_AVRG > 100 || data_pipeline->V_A_AVRG > 100 || data_pipeline->V_B_AVRG > 100){
                 ConversionCount;
@@ -260,7 +262,7 @@ extern void encoder(void){
 
 extern void motor_control(DATA_PIPELINE *data_pipeline, CONTROL *duty_control){
 
-    float tmp;
+    //float tmp;
 /*
     // this will be the control loop for the motor-
     // data will be read from the high speed pipeline and then setpoints will be updated
@@ -272,8 +274,8 @@ extern void motor_control(DATA_PIPELINE *data_pipeline, CONTROL *duty_control){
     }
 */
     V_DC = data_pipeline->V_DC_AVRG;
-    V_REF = data_pipeline->V_ref;
-    tmp = data_pipeline->V_B_AVRG - data_pipeline->V_A_AVRG;
+    V_REF = data_pipeline->V_output_ref;
+    //tmp = data_pipeline->V_B_AVRG - data_pipeline->V_A_AVRG;
 
     dut = (( (V_REF) / V_DC) + 1)/2;
     dut = dut*100;

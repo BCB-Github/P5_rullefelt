@@ -91,7 +91,7 @@ void ftoa(float n, char* res, int afterpoint);
 //
 Uint16  EPwm2_DB_Direction;
 Uint32  EPwm2TimerIntCount;
-Uint16 Interrupt_Count = 0;
+Uint16  Interrupt_Count = 0;
 
 
 // initialize the pipelines that will be used by the  main file
@@ -99,7 +99,9 @@ DATA_PIPELINE high_speed_pipeline = DATA_PIPELINE_DEFAULTS;
 DATA_PIPELINE data_sampling_pipeline = DATA_PIPELINE_DEFAULTS;
 DATA_PIPELINE data_send = DATA_PIPELINE_DEFAULTS;
 
+//Initialize control structs
 CONTROL inverter_duty_control = CONTROL_defaults;
+CONTROL current_control = CONTROL_defaults;
 
 // initialize the encoder struct
 POSSPEED qep_posspeed=POSSPEED_DEFAULTS;
@@ -112,10 +114,6 @@ POSSPEED qep_posspeed=POSSPEED_DEFAULTS;
 
 
 
-
-//
-// Defines to keep track of which way the Dead Band is moving
-//
 
 //
 // Main
@@ -169,9 +167,22 @@ void main(void)
 
     //Duty control
     inverter_duty_control.integrator_value_1 = 50;
-    inverter_duty_control.gain_1 = 0.01;
+    inverter_duty_control.gain_1 = 0;
     inverter_duty_control.limiter_1 = 0;
     inverter_duty_control.ref_val = 50;
+
+    //Current Control
+
+    current_control.integrator_value_1 = 0;
+    current_control.ref_val = 0;
+    current_control.gain_1 = 1;     //Ki
+    current_control.gain_2 = 1;     //Kp
+    current_control.gain_3 = 1;     //Ka
+
+
+    //Encoder
+
+    high_speed_pipeline.rpm = 0;
 
 
     // Interrupts that are used in this example are re-mapped to
@@ -301,7 +312,24 @@ void main(void)
     //Set pin 29 to on, pulling EN_GATE high
     // Step 6. IDLE loop. Just sit and loop forever (optional)
     //
+    //Loop which inits values that needs measuring
+    int i;
+    for (i = 0; i<20; i++){
 
+        //Sample the data for a little while
+        data_sampling(&high_speed_pipeline, &data_sampling_pipeline, &qep_posspeed);
+
+        //Write the values at the end of the loop
+        if (i==19){
+
+            high_speed_pipeline.V_ref = high_speed_pipeline.V_DC_AVRG;
+            high_speed_pipeline.V_output_ref = 0;
+            high_speed_pipeline.T_ref = 0;
+            high_speed_pipeline.rpm_ref = 0;
+
+        }
+
+    }
     // The idea is that now we want to initialize the voltage as the vref
     //high_speed_pipeline.V_ref = AdcRegs.ADCRESULT1>>4;
     for(;;)
@@ -374,10 +402,15 @@ high_speed_isr(void)
     // can be found in HighSpeed.c
     // highest speed - run every time
     pwm_update(&high_speed_pipeline, &inverter_duty_control); // internal filter
-    encoder(); // unclear
+
+    //Not used
+    //encoder(); // unclear
 
     // only run the motor and chopper control at one tenth of the frequency of the sampling
     if (EPwm2TimerIntCount == 10) {
+
+    Control_PI_AW_Current(&current_control, high_speed_pipeline.I_avg); //Pass the values to the controller
+    high_speed_pipeline.V_output_ref = current_control.point_1; //Update the setpoint with the new value
     // 1/10 of the speed of the high speed
     motor_control(&high_speed_pipeline, &inverter_duty_control);
     //
@@ -415,6 +448,8 @@ prdTick(void)
     // Control loop code for position control & Speed control
     //
 
+    high_speed_pipeline.rpm = qep_posspeed.SpeedRpm_fr;
+
     //
     // Acknowledge this interrupt to receive more interrupts from group 1
     //
@@ -434,7 +469,7 @@ InitInverterEPWM()
 
     Uint32 duty_cycle = (100 - DutyValue) *(double) Val/ 100 ;
 
-    EPwm2Regs.TBPRD = INVERTER_PERIOD;                        // Set timer period
+    EPwm2Regs.TBPRD = INVERTER_PERIOD;             // Set timer period
     EPwm2Regs.TBPHS.half.TBPHS = 0x0000;           // Phase is 0
     EPwm2Regs.TBCTR = 0x0000;                      // Clear counter
 
@@ -444,7 +479,7 @@ InitInverterEPWM()
     EPwm2Regs.TBCTL.bit.CTRMODE = TB_COUNT_UPDOWN; // Count up
     EPwm2Regs.TBCTL.bit.PHSEN = TB_DISABLE;        // Disable phase loading
     EPwm2Regs.TBCTL.bit.HSPCLKDIV = TB_DIV2;       // Clock ratio to SYSCLKOUT
-    EPwm2Regs.TBCTL.bit.CLKDIV = TB_DIV2;  // Slow just to observe on the scope
+    EPwm2Regs.TBCTL.bit.CLKDIV = TB_DIV2;          // Slow just to observe on the scope
 
     //
     // Setup compare
@@ -479,7 +514,8 @@ InitInverterEPWM()
     EPwm2Regs.ETSEL.bit.INTEN = 1;                 // Enable INT
 
     // ET_3RD SHOULD MAYBE BE CHAnged
-    EPwm2Regs.ETPS.bit.INTPRD =  ET_3RD;           // Generate INT on 3rd event
+    // Has been changed to 1st
+    EPwm2Regs.ETPS.bit.INTPRD =  ET_1ST;           // Generate INT on 3rd event
 }
 
 
@@ -488,7 +524,7 @@ void InitChopperEPWM()
 
     // we're just copying and pasting the code from the inverter pwm into the chopper
     // chopper should just have the same interval as the invert, because why not
-    EPwm6Regs.TBPRD = INVERTER_PERIOD;                        // Set timer period
+    EPwm6Regs.TBPRD = INVERTER_PERIOD;             // Set timer period
     EPwm6Regs.TBPHS.half.TBPHS = 0x0000;           // Phase is 0
     EPwm6Regs.TBCTR = 0x0000;                      // Clear counter
     //
@@ -727,7 +763,7 @@ void BoardStartup(){
 
     //GpioCtrlRegs.GPAMUX2.bit.GPIO11 = 00;   //set mux to GPIO
 
-
+    GpioCtrlRegs.GPAPUD.bit.GPIO4 = 0; //Turn off pin 4
 
     EDIS;
 }
@@ -934,6 +970,10 @@ cpu_timer1_isr(void)
     //
     // The CPU acknowledges the interrupt.
     //
+
+    //PieCtrlRegs.PIEACK.all = PIEACK_GROUP3;
+    //CpuTimer1.ETCLR.bit.INT=1;
+
     EDIS;
 }
 
@@ -946,9 +986,13 @@ cpu_timer2_isr(void)
     EALLOW;
     CpuTimer2.InterruptCount++;
 
+
     //
     // The CPU acknowledges the interrupt.
     //
+
+    //PieCtrlRegs.PIEACK.all = PIEACK_GROUP3;
+    //EPwm1Regs.ETCLR.bit.INT=1;
     EDIS;
 
 }

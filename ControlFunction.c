@@ -42,14 +42,14 @@ void CONTROL_ramp_filter(CONTROL *control_loop){
 
 }
 
-void CONTROL_PID_AW_controller(CONTROL *control_loop, float measured_val){
+void CONTROL_PI_AW_Current(CONTROL *control_loop, float measured_val){
 
-    float old_intgr, ref_val, old_measured_val, gain1, gain2, gain3, point1, point2, back_calc, intgr_add;
+    float old_intgr, ref_val, old_measured_val, gain1, gain2, gain3, point1, point2, back_calc, intgr_add, T, Kg;
 
-    float I_ref = control_loop->ref_val /  control_loop->kg; // I = t_ref / kg
+    //float I_ref = control_loop->ref_val /  control_loop->gain_1; // I = t_ref / kg
     //float ka = 1/
-    float in;
-    in = I_ref - measured_val;
+    //float in;
+    //in = I_ref - measured_val;
 
 
 
@@ -61,6 +61,8 @@ void CONTROL_PID_AW_controller(CONTROL *control_loop, float measured_val){
     gain3 = control_loop->gain_3;
     point1 = control_loop->point_1;
     old_measured_val = control_loop->old_measured_val;
+    T = control_loop->time_constant;
+    Kg = control_loop->K_g;
     //measured_val = measured_value->I_avg; //Needs to be changed to correct value
 
 
@@ -68,11 +70,11 @@ void CONTROL_PID_AW_controller(CONTROL *control_loop, float measured_val){
 
     //Begin calculations
 
-    point2 = ref_val - Km * measured_val;
+    point2 = ref_val/Kg - measured_val;
 
     back_calc = point1 - old_measured_val;     //Back calculation constant is calculated from old values
-    intgr_add = old_intgr + point2*gain2 - back_calc*gain3;
-    point1 = point2*gain1 + intgr_add;
+    intgr_add = old_intgr + (point2 - back_calc*gain3)*T;
+    point1 = point2*gain1 + intgr_add*gain2;
 
     //Update struct with values
     control_loop->integrator_value_1 = intgr_add;

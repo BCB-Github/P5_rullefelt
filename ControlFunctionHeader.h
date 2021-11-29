@@ -15,7 +15,7 @@
 #define N_ROLL 28
 #define D_ROLL 0.09
 #define D_WHEEL 0.55
-#define KG 0.072
+#define K_G 0.072
 #define KP 0.07952
 //
 // Typedef for the structure of the control struct
@@ -42,15 +42,16 @@ typedef struct
     float time_constant;
     float b_dyno;
     float c_dyno;
-    float h_dyno;
+    float j_dyno;
     float n_generator;
     float n_roll;
     float d_roll;
     float d_wheel;
-    float kg;
-    float kp;
-    float Ka;
-    float t_wheel_ref;
+    float K_g;
+    //float kg;
+    //float kp;
+    //float Ka;
+    //float t_wheel_ref;
 
 
 } CONTROL;
@@ -60,8 +61,15 @@ typedef CONTROL *CONTROL_handle;
 
 
 // COME BACK TO
-#define CONTROL_defaults {50,0, 0.001,1,1,0,0,0,0,0,0, \
+//#define CONTROL_defaults {50,0, 0.001,1,1,0,0,0,0,0,0, \
         0.01,0, 0, B_DYNO, C_DYNO, J_DYNO, N_GENERATOR, N_ROLL, D_ROLL, D_WHEEL, KG, KP}
+
+
+#define CONTROL_defaults {50,0,0,0,0,0,0,  0,0,0,0, \
+        0.0004, B_DYNO, C_DYNO, J_DYNO, N_GENERATOR, N_ROLL, D_ROLL, D_WHEEL, K_G}
+
+//Time constant is 1/2500 right now (can/should be calculated more accurately)
+
 
 void CONTROL_Init(void);
 void CONTROL_ramp_filter(CONTROL_handle);
