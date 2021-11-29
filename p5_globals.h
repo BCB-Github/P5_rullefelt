@@ -31,7 +31,7 @@
 // Defines for the Maximum Dead Band values
 //
 
-#define  MOTOR_DEADBAND   50  // skal kigges på senere
+#define  MOTOR_DEADBAND   1  // skal kigges på senere
 #define  INVERTER_PERIOD 750     //TB CLOCK CYCLES // TIDLIGERE val
 #define  INVERTER_START_DUTY  50 // duty cycle start value - duty value // [%]
 #define  CONTROL_PERIOD 750      //

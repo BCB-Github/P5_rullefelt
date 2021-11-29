@@ -218,6 +218,22 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline, DATA_PIPELINE *data_samp
             //data_sampling_pipeline->V_C_AVRG = data_pipeline->V_C_AVRG;
             data_sampling_pipeline->I_chopper_AVRG = data_pipeline->I_chopper_AVRG;
 
+            if (data_pipeline->I_avg > 100 || data_pipeline->V_DC_AVRG > 100 || data_pipeline->V_A_AVRG > 100 || data_pipeline->V_B_AVRG > 100){
+                ConversionCount;
+                int wastetime = 0;
+                wastetime++;
+
+            }
+            if (data_pipeline->V_A_AVRG > 100) {
+                int wastetime = 0;
+                wastetime++;
+            }
+            if (data_pipeline->V_B_AVRG > 100) {
+                int wastetime = 0;
+                wastetime++;
+            }
+
+
 
 
     if(ConversionCount == 10)
