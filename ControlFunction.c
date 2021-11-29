@@ -10,8 +10,7 @@
 
 void CONTROL_ramp_filter(CONTROL *control_loop){
 
-    float old_intgr, int_add, ref_val, gain;
-    int ramp_limiter;
+    float old_intgr, int_add, ref_val, gain, ramp_limiter;
 
 
 

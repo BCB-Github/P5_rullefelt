@@ -121,9 +121,9 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline, DATA_PIPELINE *data_samp
 
             data_pipeline->I_inverter[ConversionCount] = AdcRegs.ADCRESULT0>>4;
             data_pipeline->V_DC[ConversionCount] = AdcRegs.ADCRESULT1>>4;
-            data_pipeline->I_chopper[ConversionCount] = AdcRegs.ADCRESULT2>>4;
+            //data_pipeline->I_chopper[ConversionCount] = AdcRegs.ADCRESULT2>>4;
             data_pipeline->V_A[ConversionCount] = AdcRegs.ADCRESULT3>>4;
-           // data_pipeline->V_B[ConversionCount] = AdcRegs.ADCRESULT4>>4;
+            data_pipeline->V_B[ConversionCount] = AdcRegs.ADCRESULT2>>4; //Temporary change
            // data_pipeline->V_C[ConversionCount] = AdcRegs.ADCRESULT5>>4;
 
 
@@ -134,8 +134,8 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline, DATA_PIPELINE *data_samp
             float running_sum_v_b = 0;
             float running_sum_v_c = 0;
 
-            float running_voltage_max = data_pipeline->V_DC[1];
-            float running_voltage_min = data_pipeline->V_DC[1];
+            float running_voltage_max = data_pipeline->V_DC[0];
+            float running_voltage_min = data_pipeline->V_DC[0];
             int i = 0;
             for (i = 0; i < 10; i++)
             {
@@ -148,7 +148,7 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline, DATA_PIPELINE *data_samp
 
                 running_i_chopper += data_pipeline->I_chopper[i];
                 running_sum_v_a += data_pipeline->V_A[i];
-                //running_sum_v_b += data_pipeline->V_B[i];
+                running_sum_v_b += data_pipeline->V_B[i];
                 //running_sum_v_c += data_pipeline->V_C[i];
 
                 if (data_pipeline->V_DC[i] <= 4095){
@@ -158,11 +158,12 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline, DATA_PIPELINE *data_samp
                     runnning_sum_voltage += 4095; /// look at this
             }
 
+
             data_pipeline->V_DC_AVRG= 18.6*(((runnning_sum_voltage/10))*3/4096); //Conversion from the digial value, to the measured value, to the average dc value
 
             data_pipeline->I_chopper_AVRG = running_i_chopper / 10;
-            data_pipeline->V_A_AVRG = (float) running_sum_v_a / 10;
-            //data_pipeline->V_B_AVRG = (float) running_sum_v_b / 10;
+            data_pipeline->V_A_AVRG = (float) 18.6*(((running_sum_v_a/10))*3/4096);
+            data_pipeline->V_B_AVRG = (float) 18.6*(((running_sum_v_b/10))*3/4096);
             //data_pipeline->V_C_AVRG = (float) running_sum_v_c / 10;
 
 
@@ -197,12 +198,12 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline, DATA_PIPELINE *data_samp
 
             }
 
-            data_pipeline->I_avg = ((((runnning_sum_current/10))*3/4096));//-1.65)/(0.0002*50);
+            //data_pipeline->I_avg = ((((runnning_sum_current/10))*3/4096));//-1.65)/(0.0002*50);
 
-            data_pipeline->I_avg = ((((runnning_sum_current/10))*3/4096)*(-88.65))+147.31;
+            data_pipeline->I_avg = (((runnning_sum_current/10))*3/4096)*(-58.88)+100.73+1;
 
-            running_current_max = ((((running_current_max))*3/4096)*(-88.65))+147.31;
-            running_current_min = ((((running_current_min))*3/4096)*(-88.65))+147.31;
+            running_current_max = (((running_current_max))*3/4096)*(-58.88)+100.73+1;
+            running_current_min = (((running_current_min))*3/4096)*(-58.88)+100.73+1;
             data_pipeline->I_p2p = running_current_max-running_current_min;
             //147.31 -88.65
 
@@ -243,18 +244,7 @@ extern void encoder(void){
 
 extern void motor_control(DATA_PIPELINE *data_pipeline, CONTROL *duty_control){
 
-
-
-
-
-
-
-
-
-
-
-
-
+    float tmp;
 /*
     // this will be the control loop for the motor-
     // data will be read from the high speed pipeline and then setpoints will be updated
@@ -267,8 +257,9 @@ extern void motor_control(DATA_PIPELINE *data_pipeline, CONTROL *duty_control){
 */
     V_DC = data_pipeline->V_DC_AVRG;
     V_REF = data_pipeline->V_ref;
+    tmp = data_pipeline->V_B_AVRG - data_pipeline->V_A_AVRG;
 
-    dut = (( V_REF / V_DC) + 1)/2;
+    dut = (( (V_REF) / V_DC) + 1)/2;
     dut = dut*100;
     if (dut >= 100){
         dut = 100;
