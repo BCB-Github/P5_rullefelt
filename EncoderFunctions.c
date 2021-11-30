@@ -34,7 +34,7 @@ POSSPEED_Init(void)
     //
     // PCRM=00 mode - QPOSCNT reset on index event
     //
-    EQep1Regs.QEPCTL.bit.PCRM=00;
+    EQep1Regs.QEPCTL.bit.PCRM=1;
 
     EQep1Regs.QEPCTL.bit.UTE=1;         // Unit Timeout Enable
     EQep1Regs.QEPCTL.bit.QCLM=1;        // Latch on unit time out
@@ -44,6 +44,7 @@ POSSPEED_Init(void)
     EQep1Regs.QCAPCTL.bit.UPPS=5;       // 1/32 for unit position
     EQep1Regs.QCAPCTL.bit.CCPS=7;       // 1/128 for CAP clock
     EQep1Regs.QCAPCTL.bit.CEN=1;        // QEP Capture Enable
+
 }
 
 //

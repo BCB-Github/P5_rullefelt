@@ -175,9 +175,9 @@ void main(void)
 
     current_control.integrator_value_1 = 0;
     current_control.ref_val = 0;
-    current_control.gain_1 = 1;     //Ki
-    current_control.gain_2 = 1;     //Kp
-    current_control.gain_3 = 1;     //Ka
+    current_control.gain_1 = 0.07952;     //Kp
+    current_control.gain_2 = 30.25;     //Ki
+    current_control.gain_3 = 12.5754;     //Ka
 
 
     //Encoder
@@ -409,7 +409,7 @@ high_speed_isr(void)
     // only run the motor and chopper control at one tenth of the frequency of the sampling
     if (EPwm2TimerIntCount == 10) {
 
-    Control_PI_AW_Current(&current_control, high_speed_pipeline.I_avg); //Pass the values to the controller
+    CONTROL_PI_AW_Current(&current_control, &qep_posspeed,high_speed_pipeline.I_avg); //Pass the values to the controller
     high_speed_pipeline.V_output_ref = current_control.point_1; //Update the setpoint with the new value
     // 1/10 of the speed of the high speed
     motor_control(&high_speed_pipeline, &inverter_duty_control);
@@ -442,8 +442,11 @@ prdTick(void)
     //
     // Position and Speed measurement
     //
+    EALLOW;
+    GpioDataRegs.GPASET.bit.GPIO4 = 1;
     qep_posspeed.calc(&qep_posspeed);
-
+    GpioDataRegs.GPACLEAR.bit.GPIO4 = 1;
+    EDIS;
     //
     // Control loop code for position control & Speed control
     //
@@ -712,6 +715,11 @@ void InitEncoderEPWM(){
 
     EPwm1Regs.TBCTL.all=0x0010+TBCTLVAL; // Enable Timer
     EPwm1Regs.TBPRD=SP;
+
+
+    EPwm1Regs.AQCTLA.bit.CAU = AQ_SET;             // Set PWM2A on Zero
+    EPwm1Regs.AQCTLA.bit.CAD = AQ_CLEAR;
+
 }
 
 
@@ -750,6 +758,8 @@ InitEQepGpio(void)
     GpioCtrlRegs.GPAMUX2.bit.GPIO23 = 1;   // Configure GPIO26 as EQEP2I
     GpioCtrlRegs.GPAMUX2.bit.GPIO27 = 1;   // Configure GPIO27 as EQEP2S
 
+
+
     EDIS;
 }
 
@@ -761,9 +771,9 @@ void BoardStartup(){
 
     GpioCtrlRegs.GPADIR.bit.GPIO4 = 1;     //Use Pin 11
 
-    //GpioCtrlRegs.GPAMUX2.bit.GPIO11 = 00;   //set mux to GPIO
+    GpioCtrlRegs.GPAPUD.bit.GPIO4 = 0; //Turn on pullup
 
-    GpioCtrlRegs.GPAPUD.bit.GPIO4 = 0; //Turn off pin 4
+    GpioDataRegs.GPASET.bit.GPIO4 = 0;
 
     EDIS;
 }

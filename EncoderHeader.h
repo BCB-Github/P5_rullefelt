@@ -62,6 +62,7 @@ typedef struct
     // Output : Speed in rpm  (Q0) - independently with global Q
     //
     int32 SpeedRpm_fr;
+    int32 AccelRPM_fr;
     void (*init)();         // Pointer to the init function
     void (*calc)();         // Pointer to the calc function
 } POSSPEED;
@@ -78,16 +79,16 @@ typedef POSSPEED *POSSPEED_handle;
 //Look at speedscaler value first val in second line
 //Look at BaseRPM value, 6000 now
 #if (CPU_FRQ_150MHZ)
-    #define POSSPEED_DEFAULTS {0x0, 0x0,0x0,0x0,0x0,65536,3,0,0x0,\
+    #define POSSPEED_DEFAULTS {0x0, 0x0,0x0,0x0,0x0,4096,3,0,0x0,\
         94,0,6000,0,\
-        0,0,0,\
+        0,0,0,0,\
         (void (*)(long))POSSPEED_Init,\
         (void (*)(long))POSSPEED_Calc }
 #endif
 #if (CPU_FRQ_100MHZ)
     #define POSSPEED_DEFAULTS {0x0, 0x0,0x0,0x0,0x0,65536,3,0,0x0,\
         63,0,6000,0,\
-        0,0,0,\
+        0,0,0,0,\
         (void (*)(long))POSSPEED_Init,\
         (void (*)(long))POSSPEED_Calc }
 #endif

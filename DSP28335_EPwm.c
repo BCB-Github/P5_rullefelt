@@ -103,6 +103,7 @@ InitInverterPWM(void)
     GpioCtrlRegs.GPAPUD.bit.GPIO2 = 0;    // Enable pull-up on GPIO2 (EPWM2A)
     GpioCtrlRegs.GPAPUD.bit.GPIO3 = 0;    // Enable pull-up on GPIO3 (EPWM3B)
 
+    GpioCtrlRegs.GPAPUD.bit.GPIO0 = 0;
     //
     // Configure ePWM-2 pins using GPIO regs
     // This specifies which of the possible GPIO pins will be ePWM2 functional
@@ -111,6 +112,7 @@ InitInverterPWM(void)
     GpioCtrlRegs.GPAMUX1.bit.GPIO2 = 1;   // Configure GPIO2 as EPWM2A
     GpioCtrlRegs.GPAMUX1.bit.GPIO3 = 1;   // Configure GPIO3 as EPWM2B
 
+    GpioCtrlRegs.GPAMUX1.bit.GPIO0 = 1;
     EDIS;
 }
 void

@@ -5,6 +5,7 @@
  *      Author: henri
  */
 
+
 #ifndef CONTROLFUNCTIONHEADER_H_
 #define CONTROLFUNCTIONHEADER_H_
 
@@ -13,6 +14,7 @@
 #define J_DYNO 0.01192
 #define N_GENERATOR 22
 #define N_ROLL 28
+//#define N_R2G 1.272727
 #define D_ROLL 0.09
 #define D_WHEEL 0.55
 #define K_G 0.072
@@ -72,7 +74,7 @@ typedef CONTROL *CONTROL_handle;
 
 
 void CONTROL_Init(void);
-void CONTROL_ramp_filter(CONTROL_handle);
+extern void CONTROL_ramp_filter(CONTROL_handle);
 
 
 
