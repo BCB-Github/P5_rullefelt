@@ -67,13 +67,16 @@ void CONTROL_PI_AW_Current(CONTROL *control_loop, POSSPEED *encoder, float measu
 
     //Begin calculations
 
-    ref_val = -(control_loop->b_dyno * N_R2G + control_loop->c_dyno) + ref_val * ((control_loop->n_generator * control_loop->d_roll)/(control_loop->n_roll * control_loop->d_wheel));
+    ref_val -= (control_loop->b_dyno * N_R2G * encoder->SpeedRpm_fr + control_loop->c_dyno);
+    ref_val = ref_val / ((control_loop->n_generator * control_loop->d_roll)/(control_loop->n_roll * control_loop->d_wheel));
 
+
+    control_loop->limiter_1 = ref_val;
     point2 = (ref_val/Kg);
     point2 -= measured_val_curr;
     back_calc = point1 - old_measured_val;     //Back calculation constant is calculated from old values
     intgr_add = old_intgr + (point2 - back_calc*gain3)*T;
-    point1 = point2*gain1 + intgr_add*gain2+encoder->SpeedRpm_fr*N_R2G*Kg;
+    point1 = point2*gain1 + intgr_add*gain2;//+encoder->SpeedRpm_fr*N_R2G*Kg;
 
     //Update struct with values
     control_loop->integrator_value_1 = intgr_add;

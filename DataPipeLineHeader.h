@@ -55,6 +55,8 @@ typedef struct
     int time_on_ms;         //
     int32 rpm;              // rpm from encoder
 
+    int chop_dis;          //Whether chopper is discharging or not
+
     // Function prototypes. Actual functions are found in DataPipeline.c
     //void (*init)();         // Pointer to the init function
     //void (*calc)();         // Pointer to the calc function
@@ -65,7 +67,7 @@ typedef DATA_PIPELINE *DATA_PIPELINE_handle;
 
 
 // COME BACK TO
-#define DATA_PIPELINE_DEFAULTS {0x0, 0x0, 50,0x0, 0x0, 0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0, 0x0, 0x0,0x0,0x0, 0x0, 0x0, 0x0, 0x0}//, \
+#define DATA_PIPELINE_DEFAULTS {0x0, 0x0, 50,0x0, 0x0, 0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0, 0x0, 0x0,0x0,0x0, 0x0, 0x0, 0x0, 0x0, 0}//, \
         (void (*)(long))DATA_PIPELINE_Init, \
         (void (*)(long))DATA_PIPELINE_Calc }
 

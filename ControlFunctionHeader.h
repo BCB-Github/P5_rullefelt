@@ -15,7 +15,7 @@
 #define N_GENERATOR 22
 #define N_ROLL 28
 //#define N_R2G 1.272727
-#define D_ROLL 0.09
+#define D_ROLL 0.088
 #define D_WHEEL 0.55
 #define K_G 0.072
 #define KP 0.07952

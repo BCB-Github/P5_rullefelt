@@ -293,13 +293,21 @@ extern void motor_control(DATA_PIPELINE *data_pipeline, CONTROL *duty_control){
 }
 
 extern void chopper_control(DATA_PIPELINE *data_pipeline){
-    if (data_pipeline->V_DC_AVRG > (data_pipeline->V_ref * 1.1) ){
+    if (data_pipeline->V_DC_AVRG > (data_pipeline->V_ref * 1.1) && data_pipeline->chop_dis == 0 ){
 
         // make duty cycle 100 %percent
-        EPwm6Regs.CMPA.half.CMPA = (Uint16) INVERTER_PERIOD;
-    }else{
         EPwm6Regs.CMPA.half.CMPA = 0;
+
+        data_pipeline->chop_dis = 1;
+    }else if(data_pipeline->V_DC_AVRG < (data_pipeline->V_ref) && data_pipeline->chop_dis == 1 ){
+
+        // make duty cycle 100 %percent
+               EPwm6Regs.CMPA.half.CMPA = (Uint16) INVERTER_PERIOD;
+
+               data_pipeline->chop_dis = 0;
+
     }
+
 
     // chopper control
     // here we want to check if the voltage over the motor is over the rated voltage
