@@ -130,7 +130,7 @@ void main(void)
     //
     InitSysCtrl();
 
-    //
+    //sa
     // Step 2. Initialize GPIO:
 
     InitInverterPWM();       // Initialize the PWM GPIO we for the inverter // GPIO 2, 3
@@ -602,11 +602,16 @@ void serial_send_data(DATA_PIPELINE * highspeed_data_pipeline){
             float v_out = data_sampling.V_DC_AVRG;
             float i_out = data_sampling.I_avg;
             float rpm_out = data_sampling.rpm;
-            int time_stamp_ms =data_sampling.time_on_ms ;
+            int time_stamp_ms = (float) data_sampling.time_on_ms * (float)(100/97); // korrektionsfaktor
             int time_stamp_s = data_sampling.time_on_s;
 
             intToStr(time_stamp_ms,time_stamp_ms_string, 0);
             intToStr(time_stamp_s, time_stamp_s_string, 0);
+
+
+
+            //bug finding
+
             ftoa(rpm_out, rpm_out_string, 4);
 
             //intToStr(rpm_out, rpm_out_string, 0);
@@ -978,6 +983,7 @@ cpu_timer1_isr(void)
     CpuTimer1.InterruptCount++;
     if (CpuTimer1.InterruptCount == 10000){
         CpuTimer1.InterruptCount = 0;
+        CpuTimer2.InterruptCount++;
     }
 
     //
@@ -997,7 +1003,8 @@ __interrupt void
 cpu_timer2_isr(void)
 {
     EALLOW;
-    CpuTimer2.InterruptCount++;
+    //CpuTimer2.InterruptCount++;
+    //CpuTimer1.InterruptCount = 0;
 
 
     //
