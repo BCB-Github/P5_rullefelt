@@ -17,10 +17,23 @@
 
 
 
-
-
 #define REFERENCE_VOLTAGE 24 ////WE WANT  A REFERENCE VOLTAGE TO BE THIS VALUE
 
+
+
+
+
+
+//------------------ For testing or debugging purposes--------------------\\
+
+//Insert the set command somewhere to turn on gpio 4, and insert the clr command somewhere to turn off gpio 4
+//This will allow you to measure calculation time, frequency of calculation and wether the command runs at
+//regular intevals (ie. wether its deterministic)
+#define SetIO4 GpioDataRegs.GPASET.bit.GPIO4 = 1;
+#define ClrIO4 GpioDataRegs.GPACLEAR.bit.GPIO4 = 1;
+#define togIO4 GpioDataRegs.GPATOGGLE.bit.GPIO4 = 1;
+
+//-------------------------------------------------------------------------\\
 
 
 
@@ -50,7 +63,7 @@
 #define SCI_PRD (LSPCLK_FREQ/(SCI_FREQ*8))-1
 
 
-#define ADC_TO_PWM_RATIO 2 // this is how many pulses are read per invter duty period
+#define ADC_TO_PWM_RATIO 2 // this is how many pulses are read per inverter duty period
 
 
 
@@ -180,9 +193,10 @@ void main(void)
     current_control.gain_3 = 12.5754;     //Ka
 
 
-    //Encoder
+    //Pipeline
 
     high_speed_pipeline.rpm = 0;
+    high_speed_pipeline.chop_dis = 0;
 
 
     // Interrupts that are used in this example are re-mapped to
