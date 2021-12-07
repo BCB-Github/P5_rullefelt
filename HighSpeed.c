@@ -78,7 +78,11 @@ long adc_pwm_time_difference = 0;
     // this is where duty cycle for the inverter h bridge will be updated
     double Val = INVERTER_PERIOD;
     CONTROL_ramp_filter(inverter_duty_control);
-    data_pipeline->inverter_duty_cycle = (Uint16) inverter_duty_control->integrator_value_1;//
+
+    //data_pipeline->inverter_duty_cycle = (Uint16) inverter_duty_control->integrator_value_1;//
+    data_pipeline->inverter_duty_cycle = inverter_duty_control->integrator_value_1;//
+
+
     double DutyValue = data_pipeline->inverter_duty_cycle;
     double duty_cycle = (100 - DutyValue) * Val / 100;
 
@@ -257,6 +261,7 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline, DATA_PIPELINE *data_samp
 }
 
 extern void encoder(void){
+    1+1;
     // unclear
 }
 
@@ -273,7 +278,8 @@ extern void motor_control(DATA_PIPELINE *data_pipeline, CONTROL *duty_control){
         data_pipeline->inverter_duty_cycle ++;
     }
 */
-    V_DC = data_pipeline->V_DC_AVRG;
+    //V_DC = data_pipeline->V_DC_AVRG;
+    V_DC = 30;
     V_REF = data_pipeline->V_output_ref;
     //tmp = data_pipeline->V_B_AVRG - data_pipeline->V_A_AVRG;
 

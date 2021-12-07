@@ -188,6 +188,13 @@ void main(void)
 
     current_control.integrator_value_1 = 0;
     current_control.ref_val = 0;
+    /*
+    current_control.gain_1 = 0.22165;     //Kp
+    current_control.gain_2 = 69.398615;     //Ki
+    current_control.gain_3 =  4.511617;     //Ka
+    */
+
+
     current_control.gain_1 = 0.07952;     //Kp
     current_control.gain_2 = 30.25;     //Ki
     current_control.gain_3 = 12.5754;     //Ka
@@ -424,7 +431,7 @@ high_speed_isr(void)
     // only run the motor and chopper control at one tenth of the frequency of the sampling
     if (EPwm2TimerIntCount == 10) {
 
-    CONTROL_PI_AW_Current(&current_control, &qep_posspeed, high_speed_pipeline.I_avg); //Pass the values to the controller
+    CONTROL_PI_AW_Current(&current_control, &qep_posspeed, &high_speed_pipeline, high_speed_pipeline.I_avg); //Pass the values to the controller
     high_speed_pipeline.V_output_ref = current_control.point_1; //Update the setpoint with the new value
     // 1/10 of the speed of the high speed
     motor_control(&high_speed_pipeline, &inverter_duty_control);

@@ -31,7 +31,7 @@
 // Defines for the Maximum Dead Band values
 //
 
-#define  MOTOR_DEADBAND   100  // skal kigges på senere
+#define  MOTOR_DEADBAND   50  // skal kigges på senere
 #define  INVERTER_PERIOD 750     //TB CLOCK CYCLES // TIDLIGERE val
 #define  INVERTER_START_DUTY  50 // duty cycle start value - duty value // [%]
 #define  CONTROL_PERIOD 750      //
@@ -69,7 +69,7 @@ extern void scia_msg (char * msg);
 
 //Control Prototype is here bc it acts up if its with its friends
 
-extern void CONTROL_PI_AW_Current(CONTROL_handle, POSSPEED_handle, float measured_val_curr);
+extern void CONTROL_PI_AW_Current(CONTROL_handle, POSSPEED_handle, DATA_PIPELINE_handle, float measured_val_curr);
 
 
 
