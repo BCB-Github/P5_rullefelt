@@ -180,7 +180,7 @@ void main(void)
 
     //Duty control
     inverter_duty_control.integrator_value_1 = 50;
-    inverter_duty_control.gain_1 = 0;
+    inverter_duty_control.gain_1 = 1;
     inverter_duty_control.limiter_1 = 0;
     inverter_duty_control.ref_val = 50;
 
@@ -188,17 +188,22 @@ void main(void)
 
     current_control.integrator_value_1 = 0;
     current_control.ref_val = 0;
+
     /*
     current_control.gain_1 = 0.22165;     //Kp
     current_control.gain_2 = 69.398615;     //Ki
     current_control.gain_3 =  4.511617;     //Ka
     */
 
-
+    /*
     current_control.gain_1 = 0.07952;     //Kp
     current_control.gain_2 = 30.25;     //Ki
     current_control.gain_3 = 12.5754;     //Ka
+    */
 
+    current_control.gain_1 = 0.07952;     //Kp
+    current_control.gain_2 = 30.25;     //Ki
+    current_control.gain_3 = 0;     //Ka
 
     //Pipeline
 
@@ -431,7 +436,7 @@ high_speed_isr(void)
     // only run the motor and chopper control at one tenth of the frequency of the sampling
     if (EPwm2TimerIntCount == 10) {
 
-    CONTROL_PI_AW_Current(&current_control, &qep_posspeed, &high_speed_pipeline, high_speed_pipeline.I_avg); //Pass the values to the controller
+    CONTROL_PI_AW_Current(&current_control, &qep_posspeed, &high_speed_pipeline, -(high_speed_pipeline.I_avg)); //Pass the values to the controller
     high_speed_pipeline.V_output_ref = current_control.point_1; //Update the setpoint with the new value
     // 1/10 of the speed of the high speed
     motor_control(&high_speed_pipeline, &inverter_duty_control);
@@ -816,14 +821,14 @@ void InitAdcRegs(){
     Uint32 duty_cycle = (100 - DutyValue) *(double) Val/ 100 ;
     // Configure ADC
         //
-        AdcRegs.ADCMAXCONV.all = 0x0011;       // Setup 4 conv's on SEQ1 (Changed from 00001 and 2 conversions)
+        AdcRegs.ADCMAXCONV.all = 0x31;       // Setup 4 conv's on SEQ1 (Changed from 00001 and 2 conversions)
         AdcRegs.ADCCHSELSEQ1.bit.CONV00 = 0x0; // Setup ADCINA0 as 1st SEQ1 conv.
         AdcRegs.ADCCHSELSEQ1.bit.CONV01 = 0x1; // Setup ADCINA1 as 2nd SEQ1 conv.
         AdcRegs.ADCCHSELSEQ1.bit.CONV02 = 0x2; // Setup ADCINA2 as 3rd SEQ conv.
         AdcRegs.ADCCHSELSEQ1.bit.CONV03 = 0x3; // Setup ADCINA3 as 4th SEQ conv.
 
-        //AdcRegs.ADCCHSELSEQ2.bit.CONV04 = 0x4; // Setup ADCINA4 as 5th SEQ conv.
-        //AdcRegs.ADCCHSELSEQ2.bit.CONV05 = 0x5; // Setup ADCINA5 as 6th SEQ conv.
+        AdcRegs.ADCCHSELSEQ2.bit.CONV04 = 0x4; // Setup ADCINA4 as 5th SEQ conv.
+        AdcRegs.ADCCHSELSEQ2.bit.CONV05 = 0x5; // Setup ADCINA5 as 6th SEQ conv.
 
         //
         // Enable SOCA from ePWM to start SEQ1 and SEQ2

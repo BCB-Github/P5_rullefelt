@@ -50,6 +50,7 @@ void CONTROL_PI_AW_Current(CONTROL *control_loop, POSSPEED *encoder, DATA_PIPELI
     //float ka = 1/
     //float in;
     //in = I_ref - measured_val;
+    float sat_val = 24;
 
 
 
@@ -68,7 +69,11 @@ void CONTROL_PI_AW_Current(CONTROL *control_loop, POSSPEED *encoder, DATA_PIPELI
 
     //Begin calculations
 
-    ref_val -= (control_loop->b_dyno * N_R2G * speed + control_loop->c_dyno);
+    //ref_val -= (control_loop->b_dyno * N_R2G * speed + control_loop->c_dyno);
+    //Below is without speed implemented
+
+    //ref_val -=  control_loop->c_dyno;
+
     ref_val = ref_val / ((control_loop->n_generator * control_loop->d_roll)/(control_loop->n_roll * control_loop->d_wheel));
 
 
@@ -76,17 +81,25 @@ void CONTROL_PI_AW_Current(CONTROL *control_loop, POSSPEED *encoder, DATA_PIPELI
     point2 = (ref_val/Kg);
     point2 -= measured_val_curr;
     back_calc = point1 - old_measured_val;     //Back calculation is calculated from old values
-    intgr_add = old_intgr + (point2 - back_calc*gain3)*T;
-    point1 = point2*gain1 + intgr_add*gain2 + speed * N_R2G * Kg;
+    intgr_add = old_intgr + (point2 - back_calc*gain3)*T*gain2;
 
+    point1 = point2*gain1 + intgr_add + speed * N_R2G * Kg;
+
+    if (point1 > sat_val) {
+        intgr_add = old_intgr;
+        point1 =sat_val;
+    }else if(point1 < -sat_val){
+        intgr_add = old_intgr;
+        point1 = -sat_val;
+    }
     //Update struct with values
     control_loop->integrator_value_1 = intgr_add;
     control_loop->point_1 = point1;
-    control_loop->old_measured_val = measured_val_curr;
+    //control_loop->old_measured_val = measured_val_curr;
 
     //Calculate old measured val
 
-    control_loop->old_measured_val = 0;
+    control_loop->old_measured_val = pipeline->V_A_AVRG - pipeline->V_B_AVRG;
 
     //Debugging
     control_loop->point_2=point2;

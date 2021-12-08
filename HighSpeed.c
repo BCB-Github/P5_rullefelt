@@ -124,10 +124,10 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline, DATA_PIPELINE *data_samp
 
 
             data_pipeline->I_inverter[ConversionCount] = AdcRegs.ADCRESULT0>>4;
-            data_pipeline->V_DC[ConversionCount] = AdcRegs.ADCRESULT1>>4;
+            data_pipeline->V_DC[ConversionCount] = AdcRegs.ADCRESULT2>>4;
             //data_pipeline->I_chopper[ConversionCount] = AdcRegs.ADCRESULT2>>4;
-            data_pipeline->V_A[ConversionCount] = AdcRegs.ADCRESULT3>>4;
-            data_pipeline->V_B[ConversionCount] = AdcRegs.ADCRESULT2>>4; //Temporary change
+            data_pipeline->V_A[ConversionCount] = AdcRegs.ADCRESULT4>>4;
+            data_pipeline->V_B[ConversionCount] = AdcRegs.ADCRESULT5>>4; //Temporary change
            // data_pipeline->V_C[ConversionCount] = AdcRegs.ADCRESULT5>>4;
 
 
@@ -166,8 +166,10 @@ extern void data_sampling(DATA_PIPELINE *data_pipeline, DATA_PIPELINE *data_samp
             data_pipeline->V_DC_AVRG= 18.6*(((runnning_sum_voltage/10))*3/4096); //Conversion from the digial value, to the measured value, to the average dc value
 
             data_pipeline->I_chopper_AVRG = running_i_chopper / 10;
-            data_pipeline->V_A_AVRG = (float) 18.6*(((running_sum_v_a/10))*3/4096);
-            data_pipeline->V_B_AVRG = (float) 18.6*(((running_sum_v_b/10))*3/4096);
+            //data_pipeline->V_A_AVRG = (float) 18.6*(((running_sum_v_a/10))*3/4096);
+            data_pipeline->V_A_AVRG = (float) ((running_sum_v_a/10)-3408)/(-21.17);
+            data_pipeline->V_B_AVRG = (float) ((running_sum_v_b/10)-3329)/(-19.96);
+            //data_pipeline->V_B_AVRG = (float) 18.6*(((running_sum_v_b/10))*3/4096);
             //data_pipeline->V_C_AVRG = (float) running_sum_v_c / 10;
 
 
